@@ -40,20 +40,20 @@ struct Program {
 
 fn void sPrstk(List(<any>) *stack) {
     io::printn("----     Stack    ----");
-    foreach (value: stack) {
+    foreach (i, value: stack) {
         switch (value) {
             case int: 
-                io::printfn("Int: %d", *value);
+                io::printfn("%d Int: %d", i, *value);
             case String: 
-                io::printfn("String: \"%S\"", *value);
+                io::printfn("String: \"%S\"", i, *value);
             case bool:
                 String booleanValue = "false"; 
                 if ((bool)*value) {
                     booleanValue = "true";
                 }
-                io::printfn("Boolean: %s", booleanValue);
+                io::printfn("%d Boolean: %s", i, booleanValue);
             case float:
-                io::printfn("Float: %d", *value);
+                io::printfn("%d Float: %d", i, *value);
         }
     }
     io::printn("---- End of Stack ----");
@@ -82,6 +82,24 @@ fn void sAddi(List(<any>) *stack, ) {
     sPush(stack, mem::@tclone(addend + addend2));
 }
 
+fn void sIsub(List(<any>) *stack, ) {
+    // TODO: error handling
+    int minuend = *(int*)stack.last()!!;
+    sPop(stack);
+    int subtrahend = *(int*)stack.last()!!;
+    sPop(stack);
+    sPush(stack, mem::@tclone(minuend - subtrahend));
+}
+
+fn void sSwp(List(<any>) *stack) {
+    stack.swap(stack.len() - 1, stack.len() - 2);
+}
+
+fn void sDup(List(<any>) *stack) {
+    any value = stack.last()!!;
+    sPush(stack, value);
+}
+
 fn String eval(List(<any>) *stack, Function function) {
     switch (function.functionType) {
         case F_PUSH:
@@ -100,6 +118,12 @@ fn String eval(List(<any>) *stack, Function function) {
             if (*(bool*)stack.last()!!) {
                 return *(String*)function.operand;
             }
+        case F_SWP:
+            sSwp(stack);
+        case F_DUP:
+            sDup(stack);
+        case F_ISUB: 
+            sIsub(stack);
         default:
             unreachable();
 
@@ -136,14 +160,12 @@ fn void main(String[] args) {
     Block test = {};
     main.last_line = 0;
     test.last_line = 0;
-    test.functions.push({.functionType = F_PUSH, .operand = mem::@tclone(420)});
-    test.functions.push({.functionType = F_PRSTK});
-    test.functions.push({.functionType = F_RETURN});
-    main.functions.push({.functionType = F_PUSH, .operand = mem::@tclone(false)});
-    main.functions.push({.functionType = F_CALLCON, .operand = mem::@tclone("test")});
+    main.functions.push({.functionType = F_PUSH, .operand = mem::@tclone(69)});
+    main.functions.push({.functionType = F_PUSH, .operand = mem::@tclone(420)});
     main.functions.push({.functionType = F_PRSTK});
-    main.functions.push({.functionType = F_PUSH, .operand = mem::@tclone(true)});
-    main.functions.push({.functionType = F_CALLCON, .operand = mem::@tclone("test")});
+    main.functions.push({.functionType = F_SWP});
+    main.functions.push({.functionType = F_PRSTK});
+    main.functions.push({.functionType = F_ISUB});
     main.functions.push({.functionType = F_PRSTK});
     p.blocks.set("main", main);
     p.blocks.set("test", test);
