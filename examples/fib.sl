@@ -1,7 +1,7 @@
 main:
     push 0;
     push 1;
-    print 458;
+    print;
     push 25;
     ldy;
     pop;
