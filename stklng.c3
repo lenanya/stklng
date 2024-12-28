@@ -116,6 +116,10 @@ macro sPop(stack, usz line) {
 }
 
 fn void sAddi(List(<Node>) *stack, usz line) {
+    if (stack.len() < 2) {
+        io::printfn("[ERROR] addi requires at least 2 values on the stack (Line %d)", line);
+        libc::exit(1);
+    }
     if (stack.last()!!.nodeType != NodeType.INT) {
         io::printfn("[ERROR] addi requires 2 integers on the stack (Line %d)", line);
         libc::exit(1);
@@ -132,6 +136,10 @@ fn void sAddi(List(<Node>) *stack, usz line) {
 }
 
 fn void sAddf(List(<Node>) *stack, usz line) {
+    if (stack.len() < 2) {
+        io::printfn("[ERROR] addf requires at least 2 values on the stack (Line %d)", line);
+        libc::exit(1);
+    }
     if (stack.last()!!.nodeType != NodeType.FLOAT) {
         io::printfn("[ERROR] addf requires 2 floats on the stack (Line %d)", line, line);
         libc::exit(1);
@@ -148,6 +156,10 @@ fn void sAddf(List(<Node>) *stack, usz line) {
 }
 
 fn void sScat(List(<Node>) *stack, usz line) {
+    if (stack.len() < 2) {
+        io::printfn("[ERROR] scat requires at least 2 values on the stack (Line %d)", line);
+        libc::exit(1);
+    }
     if (stack.last()!!.nodeType != NodeType.STRING) {
         io::printfn("[ERROR] scat requires 2 strings on the stack (Line %d)", line);
         libc::exit(1);
@@ -165,6 +177,10 @@ fn void sScat(List(<Node>) *stack, usz line) {
 }
 
 fn void sIcmp(List(<Node>) *stack, CmpType cmp, usz line) {
+    if (stack.len() < 2) {
+        io::printfn("[ERROR] icmp requires at least 2 values on the stack (Line %d)", line);
+        libc::exit(1);
+    }
     if (stack.last()!!.nodeType != NodeType.INT) {
         io::printfn("[ERROR] icmp requires 2 integers on the stack (Line %d)", line);
         libc::exit(1);
@@ -194,6 +210,10 @@ fn void sIcmp(List(<Node>) *stack, CmpType cmp, usz line) {
 }
 
 fn void sFcmp(List(<Node>) *stack, CmpType cmp, usz line) {
+    if (stack.len() < 2) {
+        io::printfn("[ERROR] fcmp requires at least 2 values on the stack (Line %d)", line);
+        libc::exit(1);
+    }
     if (stack.last()!!.nodeType != NodeType.FLOAT) {
         io::printfn("[ERROR] fcmp requires 2 floats on the stack (Line %d)", line);
         libc::exit(1);
@@ -223,6 +243,10 @@ fn void sFcmp(List(<Node>) *stack, CmpType cmp, usz line) {
 }
 
 fn void sScmp(List(<Node>) *stack, CmpType cmp, usz line) {
+    if (stack.len() < 2) {
+        io::printfn("[ERROR] scmp requires at least 2 values on the stack (Line %d)", line);
+        libc::exit(1);
+    }
     if (stack.last()!!.nodeType != NodeType.STRING) {
         io::printfn("[ERROR] scmp requires 2 Strings on the stack (Line %d)", line);
         libc::exit(1);
@@ -247,6 +271,10 @@ fn void sScmp(List(<Node>) *stack, CmpType cmp, usz line) {
 }
 
 fn void sIsub(List(<Node>) *stack, usz line) {
+    if (stack.len() < 2) {
+        io::printfn("[ERROR] isub requires at least 2 values on the stack (Line %d)", line);
+        libc::exit(1);
+    }
     if (stack.last()!!.nodeType != NodeType.INT) {
         io::printfn("[ERROR] isub requires 2 integers on the stack (Line %d)", line);
         libc::exit(1);
@@ -263,6 +291,10 @@ fn void sIsub(List(<Node>) *stack, usz line) {
 }
 
 fn void sFsub(List(<Node>) *stack, usz line) {
+    if (stack.len() < 2) {
+        io::printfn("[ERROR] fsub requires at least 2 values on the stack (Line %d)", line);
+        libc::exit(1);
+    }
     if (stack.last()!!.nodeType != NodeType.FLOAT) {
         io::printfn("[ERROR] fsub requires 2 floats on the stack (Line %d)", line);
         libc::exit(1);
