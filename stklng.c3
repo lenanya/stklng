@@ -516,12 +516,10 @@ fn void exec(List(<Node>) *stack, Program program, Map(<String, Node>) *register
                 }
                 current_block.last_line = 0;
                 program.blocks.set(block, current_block);
-                i = current_block.functions.len() + 1;
                 exec(stack, program, registers, lastBlock, block);
             } else {
                 current_block.last_line = 0;
                 program.blocks.set(block, current_block);
-                i = current_block.functions.len() + 1;
                 exec(stack, program, registers, next_block, block);
             }
         }
