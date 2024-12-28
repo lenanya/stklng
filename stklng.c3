@@ -406,8 +406,7 @@ fn String eval(List(<Node>) *stack, Function function, Map(<String, Node>) *regi
         case F_TXY:
             sTxy(stack, registers, function.line);
         default:
-            unreachable("doesnt exist or not implemented");
-
+            io::printfn("[ERROR] FunctionType %s doesnt exist or is not implemented (Line %d)", function.line);
     }
     return "!";
 }
@@ -796,7 +795,7 @@ fn Program createFromFile(String filePath, bool debug) {
                     case ("tyx"):
                         add_block_function(&b, {.functionType = F_TYX, .line = tokens[tokenIndex].line});
                     default:
-                        io::printfn("%s not implemented (Line %d) :(", tokens[tokenIndex].value, tokens[tokenIndex].line);
+                        io::printfn("%s not implemented or does not exist (Line %d)", tokens[tokenIndex].value, tokens[tokenIndex].line);
                         libc::exit(1);
                 }
                 tokenIndex += 1;
