@@ -400,7 +400,7 @@ fn void exec(List(<Node>) *stack, Program program, Map(<String, Node>) *register
                 i = current_block.functions.len() + 1;
                 exec(stack, program, registers, lastBlock, block);
             } else {
-                current_block.last_line += 1;
+                current_block.last_line = 0;
                 program.blocks.set(block, current_block);
                 i = current_block.functions.len() + 1;
                 exec(stack, program, registers, next_block, block);
@@ -570,7 +570,7 @@ fn void error_msg(String expected, Token token) {
     libc::exit(1);
 }
 
-fn Program createFromFile(String filePath) {
+fn Program createFromFile(String filePath, bool debug) {
     String entireFile = (String)file::load_temp(filePath)!!;
     String[] lines = entireFile.split("\n");
     List(<String>) tokenstrings;
@@ -636,6 +636,11 @@ fn Program createFromFile(String filePath) {
             tokens.push({.tokenType = BOOL, .value = tokenstring});
         } else {
             tokens.push({.tokenType = SYMBOL, .value = tokenstring});
+        }
+    }
+    if (debug) {
+        foreach (token: tokens) {
+            io::printn(token);
         }
     }
 
@@ -759,6 +764,12 @@ fn Program createFromFile(String filePath) {
                 }
                 tokenIndex += 1;
             }
+            if (debug) {
+                foreach (f: b.functions) {
+                    io::printf("%s: ", block_name);
+                    io::printn(f);
+                }
+            }
             add_block_to_program(&p, b, block_name);
         }        
     }
@@ -770,8 +781,15 @@ fn int main(String[] args) {
         io::printn("[ERROR] You need to supply a file.");
         return 1;
     }
+    bool debug = false;
+    if (args.len > 2) {
+        if (args[2] == "debug") {
+            debug = true;
+        }
+    }
+
     String filePath = args[1];
-    Program p = createFromFile(filePath);
+    Program p = createFromFile(filePath, debug);
     List(<Node>) stack;
     Map(<String, Node>) registers;
     registers.set("x", {.nodeType = NodeType.INT, .value = mem::@clone(0)});
@@ -780,6 +798,7 @@ fn int main(String[] args) {
         io::printn("[ERROR] No main block.");
         return 1;
     }
+
     exec(&stack, p, &registers, "main", "none");
     return 0;
 }
