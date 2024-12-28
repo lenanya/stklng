@@ -263,6 +263,7 @@ fn void exec(List(<any>) *stack, Program program, String block, String lastBlock
                 i = current_block.functions.len() + 1;
                 exec(stack, program, lastBlock, block);
             } else {
+                current_block.last_line += 1;
                 program.blocks.set(block, current_block);
                 i = current_block.functions.len() + 1;
                 exec(stack, program, next_block, block);
