@@ -21,6 +21,12 @@ enum FunctionType {
 	F_RETURN, // return to the last block
 	F_SWP, // swap stack[-1] with stack[-2]
 	F_DUP, // duplicate stack[-1]
+    F_LDX,
+    F_STX,
+    F_LDY,
+    F_STY,
+    F_TYX,
+    F_TXY,
 }
 
 enum CmpType {
@@ -63,6 +69,9 @@ fn void sPrstk(List(<any>) *stack) {
                 io::printfn("%d Boolean: %s", i, booleanValue);
             case float:
                 io::printfn("%d Float: %f", i, *(float*)value);
+            default:
+                io::printf("%d Unknown Type: ", i); // TODO: fix
+                io::printn(value);
         }
     }
     io::printn("---- End of Stack ----");
@@ -201,7 +210,37 @@ fn void sPrint(List(<any>) *stack) {
     io::printn(stack.last()!!);
 }
 
-fn String eval(List(<any>) *stack, Function function) {
+fn void sLdx(List(<any>) *stack, Map(<String, any>) *registers) {
+    any value = stack.last()!!;
+    registers.set("x", mem::@tclone(value));
+}
+
+fn void sStx(List(<any>) *stack, Map(<String, any>) *registers) {
+    any value = registers.get("x")!!;
+    sPush(stack, mem::@tclone(value));
+}
+
+fn void sLdy(List(<any>) *stack, Map(<String, any>) *registers) {
+    any value = stack.last()!!;
+    registers.set("y", mem::@tclone(value));
+}
+
+fn void sSty(List(<any>) *stack, Map(<String, any>) *registers) {
+    any value = registers.get("y")!!;
+    sPush(stack, mem::@tclone(value));
+}
+
+fn void sTxy(List(<any>) *stack, Map(<String, any>) *registers) {
+    any value = registers.get("x")!!;
+    registers.set("y", mem::@tclone(value));
+}
+
+fn void sTyx(List(<any>) *stack, Map(<String, any>) *registers) {
+    any value = registers.get("y")!!;
+    registers.set("x", mem::@tclone(value));
+}
+ 
+fn String eval(List(<any>) *stack, Function function, Map(<String, any>) *registers) {
     switch (function.functionType) {
         case F_PUSH:
             sPush(stack, function.operand);
@@ -239,19 +278,31 @@ fn String eval(List(<any>) *stack, Function function) {
             sScmp(stack, function.cmpType);
         case F_PRINT:
             sPrint(stack);
+        case F_LDX:
+            sLdx(stack, registers);
+        case F_LDY:
+            sLdy(stack, registers);
+        case F_STX:
+            sStx(stack, registers);
+        case F_STY:
+            sSty(stack, registers);
+        case F_TYX:
+            sTyx(stack, registers);
+        case F_TXY:
+            sTxy(stack, registers);
         default:
-            unreachable();
+            unreachable("doesnt exist or not implemented");
 
     }
     return "!";
 }
 
-fn void exec(List(<any>) *stack, Program program, String block, String lastBlock) {
+fn void exec(List(<any>) *stack, Program program, Map(<String, any>) *registers, String block, String lastBlock) {
     Block current_block = program.blocks.get(block)!!;
     usz i = current_block.last_line;
     while (i < current_block.functions.len()) {
         current_block.last_line = i + 1;
-        String next_block = eval(stack, current_block.functions[i]);
+        String next_block = eval(stack, current_block.functions[i], registers);
         if (next_block != "!") {
             if (next_block == "return") {
                 if (lastBlock == "none") {
@@ -261,12 +312,12 @@ fn void exec(List(<any>) *stack, Program program, String block, String lastBlock
                 current_block.last_line = 0;
                 program.blocks.set(block, current_block);
                 i = current_block.functions.len() + 1;
-                exec(stack, program, lastBlock, block);
+                exec(stack, program, registers, lastBlock, block);
             } else {
                 current_block.last_line += 1;
                 program.blocks.set(block, current_block);
                 i = current_block.functions.len() + 1;
-                exec(stack, program, next_block, block);
+                exec(stack, program, registers, next_block, block);
             }
         }
         ++i;
@@ -327,6 +378,12 @@ String[] keywords = {
     "callcon",
     "call",
     "return",
+    "ldx",
+    "ldy",
+    "stx",
+    "sty",
+    "txy",
+    "tyx",
     "swp",
     "dup",
     "eq",
@@ -594,6 +651,18 @@ fn Program createFromFile(String filePath) {
                         add_block_function(&b, {.functionType = F_ADDI});
                     case ("return"):
                         add_block_function(&b, {.functionType = F_RETURN});
+                    case ("ldx"):
+                        add_block_function(&b, {.functionType = F_LDX});
+                    case ("ldy"):
+                        add_block_function(&b, {.functionType = F_LDY});
+                    case ("stx"):
+                        add_block_function(&b, {.functionType = F_STX});
+                    case ("sty"):
+                        add_block_function(&b, {.functionType = F_STY});
+                    case ("txy"):
+                        add_block_function(&b, {.functionType = F_TXY});
+                    case ("tyx"):
+                        add_block_function(&b, {.functionType = F_TYX});
                     default:
                         io::printfn("%s not implemented :(", tokens[tokenIndex].value);
                         libc::exit(1);
@@ -618,10 +687,13 @@ fn int main(String[] args) {
     String filePath = args[1];
     Program p = createFromFile(filePath);
     List(<any>) stack;
+    Map(<String, any>) registers;
+    registers.set("x", mem::@tclone(0));
+    registers.set("y", mem::@tclone(0));
     if (!p.blocks.has_key("main")) {
         io::printn("[ERROR] No main block.");
         return 1;
     }
-    exec(&stack, p, "main", "none");
+    exec(&stack, p, &registers, "main", "none");
     return 0;
 }
