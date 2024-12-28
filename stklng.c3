@@ -137,13 +137,13 @@ fn void sAddf(List(<Node>) *stack, ) {
 
 fn void sScat(List(<Node>) *stack, ) {
     if (stack.last()!!.nodeType != NodeType.STRING) {
-        io::printn("[ERROR] addf requires 2 strings on the stack");
+        io::printn("[ERROR] scat requires 2 strings on the stack");
         libc::exit(1);
     }
     String s1 = *(String*)stack.last().value!!;
     sPop(stack);
     if (stack.last()!!.nodeType != NodeType.STRING) {
-        io::printn("[ERROR] addf requires 2 strings on the stack");
+        io::printn("[ERROR] scat requires 2 strings on the stack");
         libc::exit(1);
     }
     String s2 = *(String*)stack.last().value!!;
@@ -154,11 +154,11 @@ fn void sScat(List(<Node>) *stack, ) {
 
 fn void sIcmp(List(<Node>) *stack, CmpType cmp) {
     if (stack.last()!!.nodeType != NodeType.INT) {
-        io::printn("[ERROR] addi requires 2 integers on the stack");
+        io::printn("[ERROR] icmp requires 2 integers on the stack");
         libc::exit(1);
     }
     if (stack.get(stack.len() - 2).nodeType != NodeType.INT) {
-        io::printn("[ERROR] addi requires 2 integers on the stack");
+        io::printn("[ERROR] icmp requires 2 integers on the stack");
         libc::exit(1);
     }
     int i1 = *(int*)stack.last().value!!;
@@ -183,11 +183,11 @@ fn void sIcmp(List(<Node>) *stack, CmpType cmp) {
 
 fn void sFcmp(List(<Node>) *stack, CmpType cmp) {
     if (stack.last()!!.nodeType != NodeType.FLOAT) {
-        io::printn("[ERROR] addf requires 2 floats on the stack");
+        io::printn("[ERROR] fcmp requires 2 floats on the stack");
         libc::exit(1);
     }
     if (stack.get(stack.len() - 2).nodeType != NodeType.FLOAT) {
-        io::printn("[ERROR] addf requires 2 floats on the stack");
+        io::printn("[ERROR] fcmp requires 2 floats on the stack");
         libc::exit(1);
     }
     float f1 = *(float*)stack.last().value!!;
@@ -212,11 +212,11 @@ fn void sFcmp(List(<Node>) *stack, CmpType cmp) {
 
 fn void sScmp(List(<Node>) *stack, CmpType cmp) {
     if (stack.last()!!.nodeType != NodeType.STRING) {
-        io::printn("[ERROR] addf requires 2 floats on the stack");
+        io::printn("[ERROR] scmp requires 2 Strings on the stack");
         libc::exit(1);
     }
     if (stack.get(stack.len() - 2).nodeType != NodeType.STRING) {
-        io::printn("[ERROR] addf requires 2 floats on the stack");
+        io::printn("[ERROR] scmp requires 2 Strings on the stack");
         libc::exit(1);
     }
     String s1 = *(String*)stack.last().value!!;
