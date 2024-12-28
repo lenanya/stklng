@@ -197,6 +197,10 @@ fn void sDup(List(<any>) *stack) {
     sPush(stack, value);
 }
 
+fn void sPrint(List(<any>) *stack) {
+    io::printn(stack.last()!!);
+}
+
 fn String eval(List(<any>) *stack, Function function) {
     switch (function.functionType) {
         case F_PUSH:
@@ -233,6 +237,8 @@ fn String eval(List(<any>) *stack, Function function) {
             sFcmp(stack, function.cmpType);
         case F_SCMP:
             sScmp(stack, function.cmpType);
+        case F_PRINT:
+            sPrint(stack);
         default:
             unreachable();
 
@@ -296,6 +302,7 @@ enum TokenType {
     FLOAT,
     STRING,
     PUNCT,
+    BOOL,
 }
 
 struct Token {
@@ -327,6 +334,11 @@ String[] keywords = {
     "le",
     "gt",
     "ge",
+};
+
+String[] booleans = {
+    "true",
+    "false",
 };
 
 char[] numeric = {
@@ -397,6 +409,23 @@ fn bool is_punct(String token) {
     return false;
 }
 
+fn bool is_boolean(String token) {
+    foreach (b: booleans) {
+        if (token == b) {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn void error_msg(String expected, Token token) {
+    io::printf("[ERROR] Expected %s, got ", expected);
+    io::print(token.tokenType);
+    io::print(": ");
+    io::printn(token.value);
+    libc::exit(1);
+}
+
 fn Program createFromFile(String filePath) {
     String entireFile = (String)file::load_temp(filePath)!!;
     String[] lines = entireFile.split("\n");
@@ -412,6 +441,12 @@ fn Program createFromFile(String filePath) {
                 }
                 if (token.starts_with("\"")) {
                     in_string_literal = true;
+                    if (token.ends_with("\";")) {
+                        string_literal = token.strip_end(";");
+                        in_string_literal = false;
+                        tokenstrings.push(string_literal);
+                        tokenstrings.push(";");
+                    }
                     string_literal = token;
                 } else {
                     if (!is_whitespace(token)) {
@@ -441,6 +476,10 @@ fn Program createFromFile(String filePath) {
         } 
     }
 
+    foreach (tokenstring: tokenstrings) {
+        io::printn(tokenstring);
+    }
+
     List(<Token>) tokens;
     foreach (tokenstring: tokenstrings) {
         if (is_keyword(tokenstring)) {
@@ -453,20 +492,146 @@ fn Program createFromFile(String filePath) {
             tokens.push({.tokenType = FLOAT, .value = tokenstring});
         } else if (is_punct(tokenstring)) {
             tokens.push({.tokenType = PUNCT, .value = tokenstring});
+        } else if (is_boolean(tokenstring)) {
+            tokens.push({.tokenType = BOOL, .value = tokenstring});
         } else {
             tokens.push({.tokenType = SYMBOL, .value = tokenstring});
         }
     }
 
-    foreach (token: tokens) {
-        io::printn(token);
+    Program p = {};
+    usz tokenIndex = 0;
+   
+    if (tokens.len() == 0) {
+        libc::exit(0);
     }
+    if (tokens[tokenIndex].tokenType != SYMBOL) {
+        io::printn("[ERROR] File needs to start with a block.");
+        libc::exit(0);
+    }
+    while (tokenIndex < tokens.len()) {
+        if (tokens[tokenIndex].tokenType == SYMBOL) {
+            Block b;
+            b.last_line = 0;
+            String block_name = tokens[tokenIndex].value;
 
-    return {};
+            tokenIndex += 1;
+
+            if (tokens[tokenIndex].tokenType != PUNCT) {
+                error_msg(":", tokens[tokenIndex]);
+            }
+
+            tokenIndex += 1;
+
+            while (tokenIndex < tokens.len() && tokens[tokenIndex + 1].value != ":") {
+                if (tokens[tokenIndex].tokenType != KEYWORD) {
+                    error_msg("keyword", tokens[tokenIndex]);
+                }
+                switch (tokens[tokenIndex].value) {
+                    case ("push"):
+                        tokenIndex += 1;
+                        switch (tokens[tokenIndex].tokenType) {
+                            case STRING:
+                                add_block_function(&b, {.functionType = F_PUSH, .operand = mem::@tclone(tokens[tokenIndex].value)});
+                            case BOOL:
+                                bool val;
+                                if (tokens[tokenIndex].value == "true") {
+                                    val = true;
+                                } else {
+                                    val = false;
+                                }
+                                add_block_function(&b, {.functionType = F_PUSH, .operand = mem::@tclone(val)});
+                            case INTEGER:
+                                add_block_function(&b, {.functionType = F_PUSH, .operand = mem::@tclone(tokens[tokenIndex].value.to_int()!!)});
+                            case FLOAT:
+                                add_block_function(&b, {.functionType = F_PUSH, .operand = mem::@tclone(tokens[tokenIndex].value.to_float()!!)});
+                            default:
+                                error_msg("String, bool, int or float", tokens[tokenIndex]);
+                        }
+                    case ("print"):
+                        add_block_function(&b, {.functionType = F_PRINT});
+                    case ("swp"):
+                        add_block_function(&b, {.functionType = F_SWP});
+                    case ("dup"):
+                        add_block_function(&b, {.functionType = F_DUP});
+                    case ("icmp"):
+                        tokenIndex += 1;
+                        if (tokens[tokenIndex].tokenType != KEYWORD) {
+                            error_msg("comparison type", tokens[tokenIndex]);
+                        }
+                        switch (tokens[tokenIndex].value) {
+                            case ("eq"):
+                                add_block_function(&b, {.functionType = F_ICMP, .cmpType = EQ});
+                            case ("ne"):
+                                add_block_function(&b, {.functionType = F_ICMP, .cmpType = NE});
+                            case ("lt"):
+                                add_block_function(&b, {.functionType = F_ICMP, .cmpType = LT});
+                            case ("le"):
+                                add_block_function(&b, {.functionType = F_ICMP, .cmpType = LE});
+                            case ("gt"):
+                                add_block_function(&b, {.functionType = F_ICMP, .cmpType = GT});
+                            case ("ge"):
+                                add_block_function(&b, {.functionType = F_ICMP, .cmpType = GE});
+                            default:
+                                error_msg("comparison type", tokens[tokenIndex]);
+                        }
+                    case ("callcon"):
+                        tokenIndex += 1;
+                        if (tokens[tokenIndex].tokenType != SYMBOL) {
+                            error_msg("block name", tokens[tokenIndex]);
+                        }
+                        add_block_function(&b, {.functionType = F_CALLCON, .operand = mem::@clone(tokens[tokenIndex].value)});
+                    case ("call"):
+                        tokenIndex += 1;
+                        if (tokens[tokenIndex].tokenType != SYMBOL) {
+                            error_msg("block name", tokens[tokenIndex]);
+                        }
+                        add_block_function(&b, {.functionType = F_CALL, .operand = mem::@clone(tokens[tokenIndex].value)});
+                    case ("prstk"):
+                        add_block_function(&b, {.functionType = F_PRSTK});
+                    case ("pop"):
+                        add_block_function(&b, {.functionType = F_POP});
+                    case ("isub"):
+                        add_block_function(&b, {.functionType = F_ISUB});
+                    case ("addi"):
+                        add_block_function(&b, {.functionType = F_ADDI});
+                    case ("return"):
+                        add_block_function(&b, {.functionType = F_RETURN});
+                    default:
+                        io::printfn("%s not implemented :(", tokens[tokenIndex].value);
+                        libc::exit(1);
+                }
+                tokenIndex += 1;
+                if (tokens[tokenIndex].tokenType != PUNCT) {
+                    error_msg(";", tokens[tokenIndex]);
+                }
+                tokenIndex += 1;
+            }
+            add_block_to_program(&p, b, block_name);
+        }
+        if (tokenIndex == tokens.len() - 2) {
+            tokenIndex += 2;
+        }
+    }
+    return p;
 }
 
-fn void main(String[] args) {
-    Program p = createFromFile("examples/print.sl");
+fn int main(String[] args) {
+    if (args.len < 2) {
+        io::printn("[ERROR] You need to supply a file.");
+        return 1;
+    }
+    String filePath = args[1];
+    Program p = createFromFile(filePath);
     List(<any>) stack;
-    //exec(&stack, p, "main", "none");
+    if (!p.blocks.has_key("main")) {
+        io::printn("[ERROR] No main block.");
+        return 1;
+    }
+    //Block main = p.blocks.get("blob")!!;
+    //foreach (function: main.functions) {
+    //    io::printn(function.functionType);
+    //}
+    exec(&stack, p, "main", "none");
+    return 0;
 }
