@@ -407,6 +407,7 @@ fn String eval(List(<Node>) *stack, Function function, Map(<String, Node>) *regi
             sTxy(stack, registers, function.line);
         default:
             io::printfn("[ERROR] FunctionType %s doesnt exist or is not implemented (Line %d)", function.line);
+            libc::exit(1);
     }
     return "!";
 }
