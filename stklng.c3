@@ -27,6 +27,9 @@ enum FunctionType {
     F_STY, // push value in Y register to the stack
     F_TYX, // transfer value from Y to X
     F_TXY, // transfer value from X to Y
+    F_RDF, // read entire file (name in X) and push it to the stack as a string
+    F_WTF, // write stack[-1] to file (name in X)
+    F_ATF, // apend stack[-1] to file (name in X)
 }
 
 enum CmpType {
@@ -354,6 +357,55 @@ fn void sTyx(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("y")!!;
     registers.set("x", node);
 }
+
+fn void sRdf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
+    Node node = registers.get("x")!!;
+    if (node.nodeType != NodeType.STRING) {
+        io::printfn("[ERROR] rdf requires a String in the X register (Line %d)", line);
+        libc::exit(1);
+    }
+    String entireFile = (String)file::load_temp(*(String*)node.value)!!;
+    Node nodeToPush = {.nodeType = NodeType.STRING, .value = mem::@clone(entireFile)};
+    sPush(stack, nodeToPush, line);
+}
+
+fn void sWtf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
+    Node node = registers.get("x")!!;
+    if (node.nodeType != NodeType.STRING) {
+        io::printfn("[ERROR] wtf requires a String in the X register (Line %d)", line);
+        libc::exit(1);
+    }
+    if (stack.len() < 1) {
+        io::printfn("[ERROR] wtf requires at least 1 value on the stack (Line %d)", line);
+        libc::exit(1);
+    }
+    if (stack.last()!!.nodeType != NodeType.STRING) {
+        io::printfn("[ERROR] wtf requires a Strings on the stack (Line %d)", line);
+        libc::exit(1);
+    }
+    File toWrite = file::open(*(String*)node.value, "w")!!;
+    toWrite.write(*(String*)stack.last().value!!)!!;
+    toWrite.close()!!;
+}
+
+fn void sAtf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
+    Node node = registers.get("x")!!;
+    if (node.nodeType != NodeType.STRING) {
+        io::printfn("[ERROR] atf requires a String in the X register (Line %d)", line);
+        libc::exit(1);
+    }
+    if (stack.len() < 1) {
+        io::printfn("[ERROR] atf requires at least 1 value on the stack (Line %d)", line);
+        libc::exit(1);
+    }
+    if (stack.last()!!.nodeType != NodeType.STRING) {
+        io::printfn("[ERROR] atf requires a Strings on the stack (Line %d)", line);
+        libc::exit(1);
+    }
+    File toWrite = file::open(*(String*)node.value, "a")!!;
+    toWrite.write(*(String*)stack.last().value!!)!!;
+    toWrite.close()!!;
+}
  
 fn String eval(List(<Node>) *stack, Function function, Map(<String, Node>) *registers) {
     switch (function.functionType) {
@@ -405,6 +457,12 @@ fn String eval(List(<Node>) *stack, Function function, Map(<String, Node>) *regi
             sTyx(stack, registers, function.line);
         case F_TXY:
             sTxy(stack, registers, function.line);
+        case F_RDF:
+            sRdf(stack, registers, function.line);
+        case F_WTF:
+            sWtf(stack, registers, function.line);
+        case F_ATF:
+            sAtf(stack, registers, function.line);
         default:
             io::printfn("[ERROR] FunctionType %s doesnt exist or is not implemented (Line %d)", function.line);
             libc::exit(1);
@@ -502,6 +560,9 @@ String[] keywords = {
     "tyx",
     "swp",
     "dup",
+    "rdf",
+    "wtf",
+    "atf",
     "eq",
     "ne",
     "lt",
@@ -795,6 +856,12 @@ fn Program createFromFile(String filePath, bool debug) {
                         add_block_function(&b, {.functionType = F_TXY, .line = tokens[tokenIndex].line});
                     case ("tyx"):
                         add_block_function(&b, {.functionType = F_TYX, .line = tokens[tokenIndex].line});
+                    case ("rdf"):
+                        add_block_function(&b, {.functionType = F_RDF, .line = tokens[tokenIndex].line});
+                    case ("wtf"):
+                        add_block_function(&b, {.functionType = F_WTF, .line = tokens[tokenIndex].line});
+                    case ("atf"):
+                        add_block_function(&b, {.functionType = F_ATF, .line = tokens[tokenIndex].line});
                     default:
                         io::printfn("%s not implemented or does not exist (Line %d)", tokens[tokenIndex].value, tokens[tokenIndex].line);
                         libc::exit(1);
