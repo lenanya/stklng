@@ -1,5 +1,18 @@
-# stklng in c3
+# stklng
 
-im rewriting https://github.com/lenanya/stklng in c3 so here it is :3
+stklng is a stack based interpreted programming language
 
-keyword wise it's a little behind, but i implemented a lot of the ideas i had already
+source code and execution are divided into blocks, which work similar to functions in other languages. 
+
+# to use
+
+You need the c3 compiler
+then you can simply run
+```console
+$ make
+```
+
+afterwards you can run .sl files with 
+```console
+./stklng path_to_file.sl
+```
