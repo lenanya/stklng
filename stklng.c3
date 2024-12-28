@@ -477,10 +477,6 @@ fn Program createFromFile(String filePath) {
         } 
     }
 
-    foreach (tokenstring: tokenstrings) {
-        io::printn(tokenstring);
-    }
-
     List(<Token>) tokens;
     foreach (tokenstring: tokenstrings) {
         if (is_keyword(tokenstring)) {
@@ -609,10 +605,7 @@ fn Program createFromFile(String filePath) {
                 tokenIndex += 1;
             }
             add_block_to_program(&p, b, block_name);
-        }
-        if (tokenIndex == tokens.len() - 2) {
-            tokenIndex += 2;
-        }
+        }        
     }
     return p;
 }
