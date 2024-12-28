@@ -62,7 +62,7 @@ fn void sPrstk(List(<any>) *stack) {
                 }
                 io::printfn("%d Boolean: %s", i, booleanValue);
             case float:
-                io::printfn("%d Float: %d", i, *value);
+                io::printfn("%d Float: %f", i, *(float*)value);
         }
     }
     io::printn("---- End of Stack ----");
@@ -353,8 +353,8 @@ char[] numeric = {
     '8',
     '9',
     '0',
-    '_',
     '.',
+    '-',
 };
 
 char[] puncts = {
@@ -482,7 +482,7 @@ fn Program createFromFile(String filePath) {
         if (is_keyword(tokenstring)) {
             tokens.push({.tokenType = KEYWORD, .value = tokenstring});
         } else if (is_integer(tokenstring)) {
-            tokens.push({.tokenType = INTEGER, .value = tokenstring});
+            tokens.push({.tokenType = INTEGER, .value = tokenstring.strip("_")});
         } else if (tokenstring.starts_with("\"")) {
             tokens.push({.tokenType = STRING, .value = tokenstring.strip("\"").strip_end("\"")});
         } else if (is_float(tokenstring)) {
