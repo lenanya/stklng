@@ -6,11 +6,14 @@ source code and execution are divided into blocks, which work similar to functio
 
 # to use
 
-You need the c3 compiler
-then you can simply run
+to build from source:
+    You need the c3 compiler    
+    then you can simply run
 ```console
 $ make
 ```
+
+or just download the release (linux only for now)
 
 afterwards you can run .sl files with 
 ```console
