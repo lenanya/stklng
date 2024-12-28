@@ -16,7 +16,7 @@ enum FunctionType {
 	F_SCMP, // " but for strings
 	F_PRSTK, // print the stack
 	F_PRINT, // print stack[-1]
-	F_CALLCON, // call a different block if stack[-1] is `true`
+	F_CALLCON, // call a different block if stack[-1] is bool `true`
 	F_CALL, // call a different block unconditionally
 	F_RETURN, // return to the last block
 	F_SWP, // swap stack[-1] with stack[-2]
@@ -622,10 +622,6 @@ fn int main(String[] args) {
         io::printn("[ERROR] No main block.");
         return 1;
     }
-    //Block main = p.blocks.get("blob")!!;
-    //foreach (function: main.functions) {
-    //    io::printn(function.functionType);
-    //}
     exec(&stack, p, "main", "none");
     return 0;
 }
