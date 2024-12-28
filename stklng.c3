@@ -707,6 +707,8 @@ fn Program createFromFile(String filePath, bool debug) {
             if (!in_string_literal) {
                 if (token.starts_with("//")) {
                     break; // comments just dont get put in the tokens
+                } else if (token.starts_with("#")) {
+                    break; // for shebang?
                 }
                 if (token.starts_with("\"")) {
                     in_string_literal = true;
