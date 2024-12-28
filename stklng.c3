@@ -1,27 +1,35 @@
 module stklng;
 import std::io;
 import std::collections;
+import libc;
 
 enum FunctionType {
-    F_PUSH,
-	F_POP,
-	F_POP_MANY,
-	F_ADDI,
-	F_ADDF,
-	F_SCAT,
-	F_ISUB,
-	F_FSUB,
-	F_ICMP,
-	F_FCMP,
-	F_SCMP,
-	F_PRSTK,
-	F_PRINT,
-	F_CALLCON,
-	F_CALL,
-	F_RETURN,
-	F_SWP,
-	F_CSTR,
-	F_DUP,
+    F_PUSH, // push to the stack
+	F_POP, // pop stack[-1]
+	F_ADDI, // add stack[-1] to stack[-2] (int)
+	F_ADDF, // " but for float
+	F_SCAT, // concat stack[-2] to stack[-1]
+	F_ISUB, // subtract stack[-2] from stack[-1] (int)
+	F_FSUB, // " but for float
+	F_ICMP, // compare stack[-1] to stack[-2] and push the result as a bool
+	F_FCMP, // " but for float
+	F_SCMP, // " but for strings
+	F_PRSTK, // print the stack
+	F_PRINT, // print stack[-1]
+	F_CALLCON, // call a different block if stack[-1] is `true`
+	F_CALL, // call a different block unconditionally
+	F_RETURN, // return to the last block
+	F_SWP, // swap stack[-1] with stack[-2]
+	F_DUP, // duplicate stack[-1]
+}
+
+enum CmpType {
+    EQ, // equal
+    NE, // not equal
+    LT, // less than
+    LE, // less than or equal
+    GT, // greater than
+    GE, // greater than or equal
 }
 
 struct Block {
@@ -32,6 +40,7 @@ struct Block {
 struct Function {
     FunctionType functionType;
     any operand;
+    CmpType cmpType;
 }
 
 struct Program {
@@ -82,11 +91,99 @@ fn void sAddi(List(<any>) *stack, ) {
     sPush(stack, mem::@tclone(addend + addend2));
 }
 
+fn void sAddf(List(<any>) *stack, ) {
+    // TODO: error handling
+    float addend = *(float*)stack.last()!!;
+    sPop(stack);
+    float addend2 = *(float*)stack.last()!!;
+    sPop(stack);
+    sPush(stack, mem::@tclone(addend + addend2));
+}
+
+fn void sScat(List(<any>) *stack, ) {
+    // TODO: error handling
+    String s1 = *(String*)stack.last()!!;
+    sPop(stack);
+    String s2 = *(String*)stack.last()!!;
+    sPop(stack);
+    String final = s1.tconcat(s2);
+    sPush(stack, mem::@tclone(final));
+}
+
+fn void sIcmp(List(<any>) *stack, CmpType cmp) {
+    // TODO: error handling
+    int i1 = *(int*)stack.last()!!;
+    int i2 = *(int*)stack.last()!!;
+    bool result;
+    switch (cmp) {
+        case EQ:
+            result = i1 == i2;
+        case NE:
+            result = i1 != i2;
+        case LT:
+            result = i1 < i2;
+        case LE:
+            result = i1 <= i2;
+        case GT:
+            result = i1 > i2;
+        case GE:
+            result = i1 >= i2;
+    }
+    sPush(stack, mem::@tclone(result));
+}
+
+fn void sFcmp(List(<any>) *stack, CmpType cmp) {
+    // TODO: error handling
+    float f1 = *(float*)stack.last()!!;
+    float f2 = *(float*)stack.last()!!;
+    bool result;
+    switch (cmp) {
+        case EQ:
+            result = f1 == f2;
+        case NE:
+            result = f1 != f2;
+        case LT:
+            result = f1 < f2;
+        case LE:
+            result = f1 <= f2;
+        case GT:
+            result = f1 > f2;
+        case GE:
+            result = f1 >= f2;
+    }
+    sPush(stack, mem::@tclone(result));
+}
+
+fn void sScmp(List(<any>) *stack, CmpType cmp) {
+    String s1 = *(String*)stack.last()!!;
+    String s2 = *(String*)stack.last()!!;
+    bool result;
+    switch (cmp) {
+        case EQ:
+            result = s1 == s2;
+        case NE:
+            result = s1 != s2;
+        default:
+            io::printn("[ERROR] invalid cmptype for String");
+            libc::exit(1);
+    }
+    sPush(stack, mem::@tclone(result));
+}
+
 fn void sIsub(List(<any>) *stack, ) {
     // TODO: error handling
     int minuend = *(int*)stack.last()!!;
     sPop(stack);
     int subtrahend = *(int*)stack.last()!!;
+    sPop(stack);
+    sPush(stack, mem::@tclone(minuend - subtrahend));
+}
+
+fn void sFsub(List(<any>) *stack, ) {
+    // TODO: error handling
+    float minuend = *(float*)stack.last()!!;
+    sPop(stack);
+    float subtrahend = *(float*)stack.last()!!;
     sPop(stack);
     sPush(stack, mem::@tclone(minuend - subtrahend));
 }
@@ -124,6 +221,18 @@ fn String eval(List(<any>) *stack, Function function) {
             sDup(stack);
         case F_ISUB: 
             sIsub(stack);
+        case F_FSUB:
+            sFsub(stack);
+        case F_ADDF:
+            sAddf(stack);
+        case F_SCAT:
+            sScat(stack);
+        case F_ICMP:
+            sIcmp(stack, function.cmpType);
+        case F_FCMP:
+            sFcmp(stack, function.cmpType);
+        case F_SCMP:
+            sScmp(stack, function.cmpType);
         default:
             unreachable();
 
@@ -139,6 +248,10 @@ fn void exec(List(<any>) *stack, Program program, String block, String lastBlock
         String next_block = eval(stack, current_block.functions[i]);
         if (next_block != "!") {
             if (next_block == "return") {
+                if (lastBlock == "none") {
+                    io::printn("[ERROR] Can't return from main");
+                    libc::exit(1);
+                }
                 current_block.last_line = 0;
                 program.blocks.set(block, current_block);
                 i = current_block.functions.len() + 1;
@@ -153,21 +266,207 @@ fn void exec(List(<any>) *stack, Program program, String block, String lastBlock
     }
 }
 
+fn void add_block_function(Block *b, Function f) {
+    b.functions.push(f);
+}
+
+fn Block init_block() {
+    Block b = {};
+    b.last_line = 0;
+    return b;
+}
+
+fn void add_block_to_program(Program *p, Block b, String b_name) {
+    p.blocks.set(b_name, b);
+}
+
+fn bool is_whitespace(String token) {
+    for (usz i = 0; i < token.len; ++i) {
+        if (token[i] != ' ') {
+            return false;
+        }
+    }
+    return true;
+}
+
+enum TokenType {
+    KEYWORD,
+    SYMBOL,
+    INTEGER,
+    FLOAT,
+    STRING,
+    PUNCT,
+}
+
+struct Token {
+    TokenType tokenType;
+    String value;
+}
+
+String[] keywords = {
+    "push",
+    "pop",
+    "addi",
+    "addf",
+    "scat",
+    "isub",
+    "fsub",
+    "icmp",
+    "fcmp",
+    "scmp",
+    "prstk",
+    "print",
+    "callcon",
+    "call",
+    "return",
+    "swp",
+    "dup",
+    "eq",
+    "ne",
+    "lt",
+    "le",
+    "gt",
+    "ge",
+};
+
+char[] numeric = {
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    '0',
+    '_',
+    '.',
+};
+
+char[] puncts = {
+    ';',
+    ':',
+};
+
+fn bool is_keyword(String token) {
+    foreach (keyword: keywords) {
+        if (token == keyword) {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn bool is_numeric(char c) {
+    foreach (n: numeric) {
+        if (c == n) {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn bool is_integer(String token) {
+    for (usz i = 0; i < token.len; ++i) {
+        if (!is_numeric(token[i])) {
+            return false;
+        }
+        if (token[i] == '.') {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn bool is_float(String token) {
+    for (usz i = 0; i < token.len; ++i) {
+        if (!is_numeric(token[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn bool is_punct(String token) {
+    foreach (p: puncts) {
+        if (token[0] == p) {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn Program createFromFile(String filePath) {
+    String entireFile = (String)file::load_temp(filePath)!!;
+    String[] lines = entireFile.split("\n");
+    List(<String>) tokenstrings;
+    foreach (line: lines) {
+        String[] line_tokens = line.split(" ");
+        String string_literal = "";
+        bool in_string_literal = false;
+        foreach (token: line_tokens) {
+            if (!in_string_literal) {
+                if (token.starts_with("//")) {
+                    break; // comments just dont get put in the tokens
+                }
+                if (token.starts_with("\"")) {
+                    in_string_literal = true;
+                    string_literal = token;
+                } else {
+                    if (!is_whitespace(token)) {
+                        if (token.ends_with(";")) {
+                            tokenstrings.push(token.strip_end(";"));
+                            tokenstrings.push(";");
+                        } else if (token.ends_with(":")) {
+                            tokenstrings.push(token.strip_end(":"));
+                            tokenstrings.push(":");
+                        } else {
+                            tokenstrings.push(token);
+                        }
+                    }
+                }
+            } else {
+                if (!token.ends_with("\";")) {
+                    string_literal = string_literal.tconcat(" ");
+                    string_literal = string_literal.tconcat(token);
+                } else {
+                    string_literal = string_literal.tconcat(" ");
+                    string_literal = string_literal.tconcat(token.strip_end(";"));
+                    tokenstrings.push(string_literal);
+                    tokenstrings.push(";");
+                    in_string_literal = false;
+                }
+            }
+        } 
+    }
+
+    List(<Token>) tokens;
+    foreach (tokenstring: tokenstrings) {
+        if (is_keyword(tokenstring)) {
+            tokens.push({.tokenType = KEYWORD, .value = tokenstring});
+        } else if (is_integer(tokenstring)) {
+            tokens.push({.tokenType = INTEGER, .value = tokenstring});
+        } else if (tokenstring.starts_with("\"")) {
+            tokens.push({.tokenType = STRING, .value = tokenstring.strip("\"").strip_end("\"")});
+        } else if (is_float(tokenstring)) {
+            tokens.push({.tokenType = FLOAT, .value = tokenstring});
+        } else if (is_punct(tokenstring)) {
+            tokens.push({.tokenType = PUNCT, .value = tokenstring});
+        } else {
+            tokens.push({.tokenType = SYMBOL, .value = tokenstring});
+        }
+    }
+
+    foreach (token: tokens) {
+        io::printn(token);
+    }
+
+    return {};
+}
+
 fn void main(String[] args) {
-    Program p;
+    Program p = createFromFile("examples/print.sl");
     List(<any>) stack;
-    Block main = {};
-    Block test = {};
-    main.last_line = 0;
-    test.last_line = 0;
-    main.functions.push({.functionType = F_PUSH, .operand = mem::@tclone(69)});
-    main.functions.push({.functionType = F_PUSH, .operand = mem::@tclone(420)});
-    main.functions.push({.functionType = F_PRSTK});
-    main.functions.push({.functionType = F_SWP});
-    main.functions.push({.functionType = F_PRSTK});
-    main.functions.push({.functionType = F_ISUB});
-    main.functions.push({.functionType = F_PRSTK});
-    p.blocks.set("main", main);
-    p.blocks.set("test", test);
-    exec(&stack, p, "main", "none");
+    //exec(&stack, p, "main", "none");
 }
