@@ -1,7 +1,7 @@
 #!/usr/bin/stklng
 main:
     push 0;
-    push 10;
+    push 100000000;
     ldx;
     pop;
     call loop_begin;
@@ -16,5 +16,5 @@ loop:
     pop;
     push 1;
     addi;
-//    print;
+    print;
     call loop_begin;
