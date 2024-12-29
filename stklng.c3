@@ -116,6 +116,7 @@ fn void sPush(List(<Node>) *stack, Node node, usz line) {
 // pop multiple elements off the top of the stack
 fn void sPopMany(List(<Node>) *stack, uint amount) {
     for (uint i = 0; i < amount; ++i) {
+        //free(stack.last()!!.value.ptr);
         stack.pop()!!;
     }
 }
@@ -581,24 +582,27 @@ fn String eval(List(<Node>) *stack, Function *function, Map(<String, Node>) *reg
     return "!"; // this means stay in the same block
 }
 
+// execute a block
 fn String exec_block(List(<Node>) *stack, Program *program, Map(<String, Node>) *registers, Block* block) {
     usz i = 0;
     while (i < block.functions.len()) {
         String next_block = eval(stack, block.functions.get_ref(i), registers);
-        if (next_block != "!") {
+        if (next_block != "!") { // ! means no call
             return next_block;
         }
         ++i;
     }
-    return ".";
+    return "."; // . means execution finished
 }
 
-// execute a block based on name
+// execute program
 fn void exec(List(<Node>) *stack, Program *program, Map(<String, Node>) *registers, String block, String lastBlock) {
     Block* current_block = program.blocks.get_ref(block)!!;
     String next_block = "none";
     while (next_block != ".") {
+        mem::@report_heap_allocs_in_scope() {
         next_block = exec_block(stack, program, registers, current_block);
+        };
         if (next_block == ".") {
             break;
         }
@@ -708,6 +712,7 @@ char[] puncts = {
     ';',
     ':',
     '!',
+    '.',
 };
 
 
@@ -746,6 +751,7 @@ fn bool is_integer(String token) {
 
 
 // TODO: make sure theres only one . and its not the first character
+// semi fixed due to . being registered as a punct
 fn bool is_float(String token) {
     for (usz i = 0; i < token.len; ++i) {
         if (!is_numeric(token[i])) {
@@ -1027,6 +1033,7 @@ fn int main(String[] args) {
     String filePath = args[1];
     Program p = createFromFile(filePath, debug);
     List(<Node>) stack;
+    stack.new_init(initial_capacity: 1024);
     Map(<String, Node>) registers;
     registers.set("x", {.nodeType = NodeType.INT, .value = mem::@clone(0)});
     registers.set("y", {.nodeType = NodeType.INT, .value = mem::@clone(0)});
@@ -1035,7 +1042,10 @@ fn int main(String[] args) {
         io::printn("[ERROR] No main block.");
         return 1;
     }
-
+    //mem::@report_heap_allocs_in_scope() {
     exec(&stack, &p, &registers, "main", "none");
+    //};
+
+    //stack.free();
     return 0;
 }
