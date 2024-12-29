@@ -1,3 +1,4 @@
+#!/usr/bin/stklng
 main:
     push 0;
     push 1;
@@ -14,8 +15,10 @@ loop:
     push 0;
     swp;
     icmp gt;
-    prstk;
-    preg;
+    swp;
+    pop;
+    swp;
+    pop;
     callcon nextfib;
 nextfib:
     pop;

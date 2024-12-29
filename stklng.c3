@@ -1107,9 +1107,9 @@ fn Program createFromFile(String filePath, bool debug) {
                     case ("ldxnp"):
                         add_block_function(&b, {.functionType = F_LDXNP, .line = tokens[tokenIndex].line});
                     case ("ldynp"):
-                        add_block_function(&b, {.functionType = F_LDY, .line = tokens[tokenIndex].line});
-                    case ("ldy"):
                         add_block_function(&b, {.functionType = F_LDYNP, .line = tokens[tokenIndex].line});
+                    case ("ldy"):
+                        add_block_function(&b, {.functionType = F_LDY, .line = tokens[tokenIndex].line});
                     case ("stx"):
                         add_block_function(&b, {.functionType = F_STX, .line = tokens[tokenIndex].line});
                     case ("sty"):
