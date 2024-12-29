@@ -1,2 +1,6 @@
 main:
-    pop 12.34;
+    push "test.sf";
+    ldx;
+    push "morbius";
+    wtf;
+    chkerr;

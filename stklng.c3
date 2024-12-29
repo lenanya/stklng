@@ -30,6 +30,7 @@ enum FunctionType {
     F_RDF, // read entire file (name in X) and push it to the stack as a string
     F_WTF, // write stack[-1] to file (name in X)
     F_ATF, // apend stack[-1] to file (name in X)
+    F_CHKERR, // check if last value on the stack is an error, print it and exit if it is;
 }
 
 enum CmpType {
@@ -46,18 +47,24 @@ enum NodeType {
     INT,
     BOOL,
     FLOAT,
+    ERR,
 }
 
+// values on the stack are nodes to allow multiple types
+// but still have type checking
 struct Node {
     NodeType nodeType;
     any value;
+    usz line;
 }
 
+// this is like a function in other languages
 struct Block {
     usz last_line;
     List(<Function>) functions;
 }
 
+// this is basically an instruction
 struct Function {
     FunctionType functionType;
     Node operand;
@@ -69,6 +76,7 @@ struct Program {
     Map(<String, Block>) blocks;
 }
 
+// print the entire stack
 fn void sPrstk(List(<Node>) *stack, usz line) {
     if (stack.len() < 1) {
         io::printfn("[ERROR] prstk requires at least one value on the stack (Line %d)", line);
@@ -89,24 +97,29 @@ fn void sPrstk(List(<Node>) *stack, usz line) {
                 io::printfn("%d Boolean: %s", i, booleanValue);
             case NodeType.FLOAT:
                 io::printfn("%d Float: %f", i, *(float*)node.value);
+            case NodeType.ERR:
+                io::printfn("%d ERROR: %s which occured in line %d", i, *(String*)node.value, node.line);
             default:
-                io::printf("%d Unknown Type: ", i); // TODO: fix
+                io::printf("%d Unknown Type: ", i);
                 io::printn(node.value);
         }
     }
     io::printn("---- End of Stack ----");
 }
 
+// push node to the stack
 fn void sPush(List(<Node>) *stack, Node node, usz line) {
     stack.push(node);
 }
 
+// pop multiple elements off the top of the stack
 fn void sPopMany(List(<Node>) *stack, uint amount) {
     for (uint i = 0; i < amount; ++i) {
         stack.pop()!!;
     }
 }
 
+// pop 1 element off the top of the stack
 macro sPop(stack, usz line) {
     if (stack.len() < 1) {
         io::printfn("[ERROR] pop requires at least one value on the stack (Line %d)", line);
@@ -115,6 +128,7 @@ macro sPop(stack, usz line) {
     sPopMany(stack, 1);
 }
 
+// add ints stack[-1] and stack[-2]
 fn void sAddi(List(<Node>) *stack, usz line) {
     if (stack.len() < 2) {
         io::printfn("[ERROR] addi requires at least 2 values on the stack (Line %d)", line);
@@ -135,6 +149,7 @@ fn void sAddi(List(<Node>) *stack, usz line) {
     sPush(stack, {.nodeType = NodeType.INT, .value = mem::@clone(addend + addend2)}, line);
 }
 
+// add floats stack[-1] and stack[-2]
 fn void sAddf(List(<Node>) *stack, usz line) {
     if (stack.len() < 2) {
         io::printfn("[ERROR] addf requires at least 2 values on the stack (Line %d)", line);
@@ -155,6 +170,7 @@ fn void sAddf(List(<Node>) *stack, usz line) {
     sPush(stack, {.nodeType = NodeType.FLOAT, .value = mem::@clone(addend + addend2)}, line);
 }
 
+// concat stack[-2] to stack[-1]
 fn void sScat(List(<Node>) *stack, usz line) {
     if (stack.len() < 2) {
         io::printfn("[ERROR] scat requires at least 2 values on the stack (Line %d)", line);
@@ -176,6 +192,8 @@ fn void sScat(List(<Node>) *stack, usz line) {
     sPush(stack, {.nodeType = NodeType.STRING, .value = mem::@clone(final)}, line);
 }
 
+// compare ints stack[-1] to stack[-2] and push a bool
+// depending on the result of the cmptype
 fn void sIcmp(List(<Node>) *stack, CmpType cmp, usz line) {
     if (stack.len() < 2) {
         io::printfn("[ERROR] icmp requires at least 2 values on the stack (Line %d)", line);
@@ -209,6 +227,8 @@ fn void sIcmp(List(<Node>) *stack, CmpType cmp, usz line) {
     sPush(stack, {.nodeType = NodeType.BOOL, .value = mem::@clone(result)}, line);
 }
 
+// compare floats stack[-1] to stack[-2] and push a bool
+// depending on the result of the cmptype
 fn void sFcmp(List(<Node>) *stack, CmpType cmp, usz line) {
     if (stack.len() < 2) {
         io::printfn("[ERROR] fcmp requires at least 2 values on the stack (Line %d)", line);
@@ -242,6 +262,8 @@ fn void sFcmp(List(<Node>) *stack, CmpType cmp, usz line) {
     sPush(stack, {.nodeType = NodeType.BOOL, .value = mem::@clone(result)}, line);
 }
 
+// compare strings stack[-1] to stack[-2] and push a bool
+// depending on the result of the cmptype
 fn void sScmp(List(<Node>) *stack, CmpType cmp, usz line) {
     if (stack.len() < 2) {
         io::printfn("[ERROR] scmp requires at least 2 values on the stack (Line %d)", line);
@@ -270,6 +292,7 @@ fn void sScmp(List(<Node>) *stack, CmpType cmp, usz line) {
     sPush(stack, {.nodeType = NodeType.BOOL, .value = mem::@clone(result)}, line);
 }
 
+// subtract floats stack[-2] from stack[-1]
 fn void sIsub(List(<Node>) *stack, usz line) {
     if (stack.len() < 2) {
         io::printfn("[ERROR] isub requires at least 2 values on the stack (Line %d)", line);
@@ -290,6 +313,7 @@ fn void sIsub(List(<Node>) *stack, usz line) {
     sPush(stack, {.nodeType = NodeType.INT, .value = mem::@clone(minuend - subtrahend)}, line);
 }
 
+// subtract integers stack[-2] from stack[-1]
 fn void sFsub(List(<Node>) *stack, usz line) {
     if (stack.len() < 2) {
         io::printfn("[ERROR] fsub requires at least 2 values on the stack (Line %d)", line);
@@ -310,6 +334,7 @@ fn void sFsub(List(<Node>) *stack, usz line) {
     sPush(stack, {.nodeType = NodeType.FLOAT, .value = mem::@clone(minuend - subtrahend)}, line);
 }
 
+// swap stack[-1] with stack[-2]
 fn void sSwp(List(<Node>) *stack, usz line) {
     if (stack.len() < 2) {
         io::printfn("[ERROR] swp requires at least 2 values on the stack (Line %d)", line);
@@ -318,6 +343,7 @@ fn void sSwp(List(<Node>) *stack, usz line) {
     stack.swap(stack.len() - 1, stack.len() - 2);
 }
 
+// duplicate stack[-1]
 fn void sDup(List(<Node>) *stack, usz line) {
     if (stack.len() < 1) {
         io::printfn("[ERROR] dup requires at least 1 value on the stack (Line %d)", line);
@@ -327,6 +353,7 @@ fn void sDup(List(<Node>) *stack, usz line) {
     sPush(stack, node, line);
 }
 
+// print stack[-1]// append stack[-1] to the file with the filePath in X register
 fn void sPrint(List(<Node>) *stack, usz line) {
     if (stack.len() < 1) {
         io::printfn("[ERROR] print requires at least 1 value on the stack (Line %d)", line);
@@ -346,12 +373,15 @@ fn void sPrint(List(<Node>) *stack, usz line) {
                 io::printn(booleanValue);
             case NodeType.FLOAT:
                 io::printn(*(float*)node.value);
+            case NodeType.ERR:
+                io::printfn("ERROR: %s", *(String*)node.value);
             default:
                 io::print("Unknown Type: "); // TODO: fix
                 io::printn(node.value);
         }
 }
 
+// load stack[-1] into X
 fn void sLdx(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     if (stack.len() < 1) {
         io::printfn("[ERROR] ldx requires at least 1 value on the stack (Line %d)", line);
@@ -361,11 +391,13 @@ fn void sLdx(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     registers.set("x", node);
 }
 
+// push X to the stack
 fn void sStx(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("x")!!;
     sPush(stack, node, line);
 }
 
+// load stack[-1] into Y
 fn void sLdy(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     if (stack.len() < 1) {
         io::printfn("[ERROR] ldy requires at least 1 value on the stack (Line %d)", line);
@@ -375,32 +407,42 @@ fn void sLdy(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     registers.set("y", node);
 }
 
+// push Y to the stack
 fn void sSty(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("y")!!;
     sPush(stack, node, line);
 }
 
+// transfer X to Y
 fn void sTxy(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("x")!!;
     registers.set("y", node);
 }
 
+// transfer Y to X
 fn void sTyx(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("y")!!;
     registers.set("x", node);
 }
 
+// read entire file with the filePath in X and push the result onto the stack
 fn void sRdf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("x")!!;
     if (node.nodeType != NodeType.STRING) {
         io::printfn("[ERROR] rdf requires a String in the X register (Line %d)", line);
         libc::exit(1);
     }
-    String entireFile = (String)file::load_temp(*(String*)node.value)!!;
-    Node nodeToPush = {.nodeType = NodeType.STRING, .value = mem::@clone(entireFile)};
-    sPush(stack, nodeToPush, line);
+    String! entireFile = (String)file::load_temp(*(String*)node.value);
+    if (try entireFile) {
+        Node nodeToPush = {.nodeType = NodeType.STRING, .value = mem::@clone(entireFile)};
+        sPush(stack, nodeToPush, line);
+    } else {
+        Node nodeToPush = {.nodeType = NodeType.ERR, .value = mem::@clone("FileNotFound"), .line = line};
+        sPush(stack, nodeToPush, line);
+    }
 }
 
+// write stack[-1] to the file with the filePath in X register
 fn void sWtf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("x")!!;
     if (node.nodeType != NodeType.STRING) {
@@ -415,11 +457,21 @@ fn void sWtf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
         io::printfn("[ERROR] wtf requires a Strings on the stack (Line %d)", line);
         libc::exit(1);
     }
-    File toWrite = file::open(*(String*)node.value, "w")!!;
-    toWrite.write(*(String*)stack.last().value!!)!!;
-    toWrite.close()!!;
+    File! toWrite = file::open(*(String*)node.value, "w")!!;
+    if (try toWrite) {
+        usz! success = toWrite.write(*(String*)stack.last().value!!);
+        if (@catch(success)) {
+            Node nodeToPush = {.nodeType = NodeType.ERR, .value = mem::@clone("FileWriteError"), .line = line};
+            sPush(stack, nodeToPush, line);
+        }
+        toWrite.close()!!;
+    } else {
+        Node nodeToPush = {.nodeType = NodeType.ERR, .value = mem::@clone("FileNotFound"), .line = line};
+        sPush(stack, nodeToPush, line);
+    }
 }
 
+// append stack[-1] to the file with the filePath in X register
 fn void sAtf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("x")!!;
     if (node.nodeType != NodeType.STRING) {
@@ -434,11 +486,35 @@ fn void sAtf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
         io::printfn("[ERROR] atf requires a Strings on the stack (Line %d)", line);
         libc::exit(1);
     }
-    File toWrite = file::open(*(String*)node.value, "a")!!;
-    toWrite.write(*(String*)stack.last().value!!)!!;
-    toWrite.close()!!;
+    File! toWrite = file::open(*(String*)node.value, "a");
+    if (try toWrite) {
+        usz! success = toWrite.write(*(String*)stack.last().value!!);
+        if (@catch(success)) {
+            Node nodeToPush = {.nodeType = NodeType.ERR, .value = mem::@clone("FileWriteError"), .line = line};
+            sPush(stack, nodeToPush, line);
+        }
+        toWrite.close()!!;
+    } else {
+        Node nodeToPush = {.nodeType = NodeType.ERR, .value = mem::@clone("FileNotFound"), .line = line};
+        sPush(stack, nodeToPush, line);
+    }
 }
- 
+
+// check if last item on the stack is an error
+// if it is, print it and exit
+fn void sChkerr(List(<Node>) *stack, usz line) {
+    if (stack.len() < 1) {
+        io::printfn("[ERROR] chkerr requires at least 1 value on the stack (Line %d)", line);
+        libc::exit(1);
+    }
+    if (stack.last()!!.nodeType == NodeType.ERR) {
+        io::printfn("[ERROR] %s in chkerr (Line %d)", stack.last()!!.value, line);
+        libc::exit(1);
+    }
+}
+
+// eval a single function and return `!` or the name of the next block/return
+// to go back to the previous block
 fn String eval(List(<Node>) *stack, Function function, Map(<String, Node>) *registers) {
     switch (function.functionType) {
         case F_PUSH:
@@ -495,13 +571,16 @@ fn String eval(List(<Node>) *stack, Function function, Map(<String, Node>) *regi
             sWtf(stack, registers, function.line);
         case F_ATF:
             sAtf(stack, registers, function.line);
+        case F_CHKERR:
+            sChkerr(stack, function.line);
         default:
             io::printfn("[ERROR] FunctionType %s doesnt exist or is not implemented (Line %d)", function.line);
             libc::exit(1);
     }
-    return "!";
+    return "!"; // this means stay in the same block
 }
 
+// execute a block based on name
 fn void exec(List(<Node>) *stack, Program program, Map(<String, Node>) *registers, String block, String lastBlock) {
     Block current_block = program.blocks.get(block)!!;
     usz i = current_block.last_line;
@@ -525,6 +604,7 @@ fn void exec(List(<Node>) *stack, Program program, Map(<String, Node>) *register
         }
         ++i;
     }
+    // TODO: make not recursive so it actually works
 }
 
 fn void add_block_function(Block *b, Function f) {
@@ -540,6 +620,8 @@ fn Block init_block() {
 fn void add_block_to_program(Program *p, Block b, String b_name) {
     p.blocks.set(b_name, b);
 }
+
+// helper functions for createFromFile()
 
 fn bool is_whitespace(String token) {
     for (usz i = 0; i < token.len; ++i) {
@@ -593,6 +675,7 @@ String[] keywords = {
     "rdf",
     "wtf",
     "atf",
+    "chkerr",
     "eq",
     "ne",
     "lt",
@@ -624,8 +707,11 @@ char[] numeric = {
 char[] puncts = {
     ';',
     ':',
+    '!',
 };
 
+
+// all of these should be self explanatory
 fn bool is_keyword(String token) {
     foreach (keyword: keywords) {
         if (token == keyword) {
@@ -644,6 +730,8 @@ fn bool is_numeric(char c) {
     return false;
 }
 
+// TODO: make sure theres only one - and if there is, it's 
+// the first character
 fn bool is_integer(String token) {
     for (usz i = 0; i < token.len; ++i) {
         if (!is_numeric(token[i])) {
@@ -656,6 +744,8 @@ fn bool is_integer(String token) {
     return true;
 }
 
+
+// TODO: make sure theres only one . and its not the first character
 fn bool is_float(String token) {
     for (usz i = 0; i < token.len; ++i) {
         if (!is_numeric(token[i])) {
@@ -692,6 +782,8 @@ fn void error_msg(String expected, Token token) {
     libc::exit(1);
 }
 
+// create a Program struct containing blocks
+// which can then get executed
 fn Program createFromFile(String filePath, bool debug) {
     String entireFile = (String)file::load_temp(filePath)!!;
     String[] lines = entireFile.split("\n");
@@ -706,9 +798,9 @@ fn Program createFromFile(String filePath, bool debug) {
                 if (token.starts_with("//")) {
                     break; // comments just dont get put in the tokens
                 } else if (token.starts_with("#")) {
-                    break; // for shebang?
+                    break; // for shebang
                 }
-                if (token.starts_with("\"")) {
+                if (token.starts_with("\"")) { // string literal
                     in_string_literal = true;
                     if (token.ends_with("\";")) {
                         string_literal = token.strip_end(";");
@@ -755,7 +847,7 @@ fn Program createFromFile(String filePath, bool debug) {
     }
 
     List(<Token>) tokens;
-    foreach (i, tokenstring: tokenstrings) {
+    foreach (i, tokenstring: tokenstrings) { // TODO: rewrite as switch(true) / just switch
         if (is_keyword(tokenstring)) {
             tokens.push({.tokenType = KEYWORD, .value = tokenstring, .line = indices.get(i)});
         } else if (is_integer(tokenstring)) {
@@ -784,8 +876,8 @@ fn Program createFromFile(String filePath, bool debug) {
     if (tokens.len() == 0) {
         libc::exit(0);
     }
-    if (tokens[tokenIndex].tokenType != SYMBOL) {
-        io::printn("[ERROR] File needs to start with a block. (Line 0)");
+    if (tokens[tokenIndex].tokenType != SYMBOL) { // make sure theres a block at the start
+        io::printn("[ERROR] File needs to start with a block");
         libc::exit(0);
     }
     while (tokenIndex < tokens.len()) {
@@ -796,7 +888,7 @@ fn Program createFromFile(String filePath, bool debug) {
 
             tokenIndex += 1;
 
-            if (tokens[tokenIndex].tokenType != PUNCT) {
+            if (tokens[tokenIndex].tokenType != PUNCT) { // expect :
                 error_msg(":", tokens[tokenIndex]);
             }
 
@@ -894,12 +986,15 @@ fn Program createFromFile(String filePath, bool debug) {
                         add_block_function(&b, {.functionType = F_WTF, .line = tokens[tokenIndex].line});
                     case ("atf"):
                         add_block_function(&b, {.functionType = F_ATF, .line = tokens[tokenIndex].line});
+                    case ("chkerr"):
+                        add_block_function(&b, {.functionType = F_CHKERR, .line = tokens[tokenIndex].line});
                     default:
                         io::printfn("%s not implemented or does not exist (Line %d)", tokens[tokenIndex].value, tokens[tokenIndex].line);
                         libc::exit(1);
                 }
                 tokenIndex += 1;
-                if (tokens[tokenIndex].tokenType != PUNCT) {
+                // TODO: actually check it's ; and not : or !
+                if (tokens[tokenIndex].tokenType != PUNCT) { // expect ;
                     error_msg(";", tokens[tokenIndex]);
                 }
                 tokenIndex += 1;
@@ -924,17 +1019,19 @@ fn int main(String[] args) {
     bool debug = false;
     if (args.len > 2) {
         if (args[2] == "debug") {
-            debug = true;
+            debug = true; // to print debug info in createFromFile
         }
     }
 
+    // initialize stuff
     String filePath = args[1];
     Program p = createFromFile(filePath, debug);
     List(<Node>) stack;
     Map(<String, Node>) registers;
     registers.set("x", {.nodeType = NodeType.INT, .value = mem::@clone(0)});
     registers.set("y", {.nodeType = NodeType.INT, .value = mem::@clone(0)});
-    if (!p.blocks.has_key("main")) {
+
+    if (!p.blocks.has_key("main")) { // make sure theres a main
         io::printn("[ERROR] No main block.");
         return 1;
     }
