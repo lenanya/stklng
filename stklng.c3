@@ -32,6 +32,7 @@ enum FunctionType {
     F_WTF, // write stack[-1] to file (name in X)
     F_ATF, // apend stack[-1] to file (name in X)
     F_CHKERR, // check if last value on the stack is an error, print it and exit if it is;
+    F_SSPLT, // split stack[-1] at string in X;
 }
 
 enum CmpType {
@@ -401,6 +402,7 @@ fn void sLdx(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
         libc::exit(1);
     }
     Node node = stack.last()!!;
+    sPop(stack, line);
     registers.set("x", node);
 }
 
@@ -417,6 +419,7 @@ fn void sLdy(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
         libc::exit(1);
     }
     Node node = stack.last()!!;
+    sPop(stack, line);
     registers.set("y", node);
 }
 
@@ -467,7 +470,7 @@ fn void sWtf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
         libc::exit(1);
     }
     if (stack.last()!!.nodeType != NodeType.STRING) {
-        io::printfn("[ERROR] wtf requires a Strings on the stack (Line %d)", line);
+        io::printfn("[ERROR] wtf requires a String on the stack (Line %d)", line);
         libc::exit(1);
     }
     File! toWrite = file::open(node.value.v_string, "w")!!;
@@ -496,7 +499,7 @@ fn void sAtf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
         libc::exit(1);
     }
     if (stack.last()!!.nodeType != NodeType.STRING) {
-        io::printfn("[ERROR] atf requires a Strings on the stack (Line %d)", line);
+        io::printfn("[ERROR] atf requires a String on the stack (Line %d)", line);
         libc::exit(1);
     }
     File! toWrite = file::open(node.value.v_string, "a");
@@ -523,6 +526,30 @@ fn void sChkerr(List(<Node>) *stack, usz line) {
     if (stack.last()!!.nodeType == NodeType.ERR) {
         io::printfn("[ERROR] %s in chkerr (Line %d)", stack.last()!!.value.v_string, line);
         libc::exit(1);
+    }
+}
+
+fn void sSsplt(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
+    Node node = registers.get("x")!!;
+    if (node.nodeType != NodeType.STRING) {
+        io::printfn("[ERROR] ssplit requires a String in the X register (Line %d)", line);
+        libc::exit(1);
+    }
+    if (stack.len() < 1) {
+        io::printfn("[ERROR] ssplit requires at least 1 value on the stack (Line %d)", line);
+        libc::exit(1);
+    }
+    if (stack.last()!!.nodeType != NodeType.STRING) {
+        io::printfn("[ERROR] ssplit requires a String on the stack (Line %d)", line);
+        libc::exit(1);
+    }
+    String needle = node.value.v_string;
+    String toSplit = stack.last().value.v_string!!;
+    sPop(stack, line);
+    String[] splits = toSplit.split(needle);
+    foreach (split: splits) {
+        Node nodeToPush = {.nodeType = NodeType.STRING, .value.v_string = split};
+        sPush(stack, nodeToPush, line);
     }
 }
 
@@ -594,6 +621,8 @@ fn String eval(List(<Node>) *stack, Function *function, Map(<String, Node>) *reg
             sAtf(stack, registers, function.line);
         case F_CHKERR:
             sChkerr(stack, function.line);
+        case F_SSPLT:
+            sSsplt(stack, registers, function.line);
         default:
             io::printfn("[ERROR] FunctionType %s doesnt exist or is not implemented (Line %d)", function.line);
             libc::exit(1);
@@ -699,6 +728,7 @@ String[] keywords = {
     "wtf",
     "atf",
     "chkerr",
+    "ssplt",
     "eq",
     "ne",
     "lt",
@@ -1013,6 +1043,8 @@ fn Program createFromFile(String filePath, bool debug) {
                         add_block_function(&b, {.functionType = F_ATF, .line = tokens[tokenIndex].line});
                     case ("chkerr"):
                         add_block_function(&b, {.functionType = F_CHKERR, .line = tokens[tokenIndex].line});
+                    case ("ssplt"):
+                        add_block_function(&b, {.functionType = F_SSPLT, .line = tokens[tokenIndex].line});
                     default:
                         io::printfn("%s not implemented or does not exist (Line %d)", tokens[tokenIndex].value, tokens[tokenIndex].line);
                         libc::exit(1);

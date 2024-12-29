@@ -1,14 +1,13 @@
 #!/usr/bin/stklng
 main:
     push 0;
-    push 100000000;
+    push 2147483647;
     ldx;
-    pop;
     call loop_begin;
 loop_begin:
     stx;
     swp;
-    icmp lt;
+    icmp le;
     callcon loop;
 loop:
     pop;
@@ -16,5 +15,5 @@ loop:
     pop;
     push 1;
     addi;
-    print;
+    //print;
     call loop_begin;
