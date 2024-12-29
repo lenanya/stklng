@@ -996,9 +996,12 @@ fn Program createFromFile(String filePath, bool debug) {
         }
     }
     if (debug) {
+        io::printn("-------- Tokens --------\n");
         foreach (token: tokens) {
+            io::print("    ");
             io::printn(token);
         }
+        io::printn("-------- Tokens --------\n");
     }
 
     Program p = {};
@@ -1138,12 +1141,14 @@ fn Program createFromFile(String filePath, bool debug) {
                 }
                 tokenIndex += 1;
             }
-            //if (debug) {
-            //    foreach (f: b.functions) {
-            //        io::printf("%s: ", block_name);
-            //        io::printn(f);
-            //    }
-            //}
+            if (debug) {
+                io::printn("-------- Functions --------\n");
+                foreach (f: b.functions) {
+                    io::printf("    %s: ", block_name);
+                    io::printn(f);
+                }
+                io::printn("-------- Functions --------\n");
+            }
             add_block_to_program(&p, b, block_name);
         }        
     }
@@ -1175,10 +1180,14 @@ fn int main(String[] args) {
         io::printn("[ERROR] No main block.");
         return 1;
     }
-    //mem::@report_heap_allocs_in_scope() {
-    exec(&stack, &p, &registers, "main", "none");
-    //};
+    if (debug) {
+        mem::@report_heap_allocs_in_scope() {
+            exec(&stack, &p, &registers, "main", "none");
+            io::printn("\n----- Debug -----");
+        };
+    } else {
+        exec(&stack, &p, &registers, "main", "none");
+    }
 
-    //stack.free();
     return 0;
 }
