@@ -1025,6 +1025,9 @@ fn Program createFromFile(String filePath, bool debug) {
             if (tokens[tokenIndex].tokenType != PUNCT) { // expect :
                 error_msg(":", tokens[tokenIndex]);
             }
+            if (tokens[tokenIndex].value != ":") {
+                    error_msg(":", tokens[tokenIndex]);
+            }
 
             tokenIndex += 1;
 
@@ -1100,6 +1103,7 @@ fn Program createFromFile(String filePath, bool debug) {
                         add_block_function(&b, {.functionType = F_ISUB, .line = tokens[tokenIndex].line});
                     case ("addi"):
                         add_block_function(&b, {.functionType = F_ADDI, .line = tokens[tokenIndex].line});
+                    // DEPRECATED
                     //case ("return"):
                     //    add_block_function(&b, {.functionType = F_RETURN, .line = tokens[tokenIndex].line});
                     case ("ldx"):
@@ -1135,8 +1139,11 @@ fn Program createFromFile(String filePath, bool debug) {
                         libc::exit(1);
                 }
                 tokenIndex += 1;
-                // TODO: actually check it's ; and not : or !
+                
                 if (tokens[tokenIndex].tokenType != PUNCT) { // expect ;
+                    error_msg(";", tokens[tokenIndex]);
+                }
+                if (tokens[tokenIndex].value != ";") {
                     error_msg(";", tokens[tokenIndex]);
                 }
                 tokenIndex += 1;
