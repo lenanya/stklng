@@ -3,25 +3,23 @@ main:
     push 1;
     print;
     push 25;
-    ldy;
+    ldynp;
     pop;
     call loop;
 loop:
     push 1;
     sty;
     isub;
-    ldy;
+    ldynp;
     push 0;
     swp;
     icmp gt;
-    swp;
-    pop;
-    swp;
-    pop;
+    prstk;
+    preg;
     callcon nextfib;
 nextfib:
     pop;
-    ldx;
+    ldxnp;
     swp;
     stx;
     addi;

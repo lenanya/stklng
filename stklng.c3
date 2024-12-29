@@ -23,8 +23,10 @@ enum FunctionType {
 	F_SWP, // swap stack[-1] with stack[-2]
 	F_DUP, // duplicate stack[-1]
     F_LDX, // load stack[-1] into X register
+    F_LDXNP, // " without popping
     F_STX, // push value in X register to the stack
     F_LDY, // load stack[-1] into Y register
+    F_LDYNP, // " without popping
     F_STY, // push value in Y register to the stack
     F_TYX, // transfer value from Y to X
     F_TXY, // transfer value from X to Y
@@ -32,7 +34,8 @@ enum FunctionType {
     F_WTF, // write stack[-1] to file (name in X)
     F_ATF, // apend stack[-1] to file (name in X)
     F_CHKERR, // check if last value on the stack is an error, print it and exit if it is;
-    F_SSPLT, // split stack[-1] at string in X;
+    F_SSPLT, // split stack[-1] at string in X
+    F_PREG, // print registers
 }
 
 enum CmpType {
@@ -406,6 +409,16 @@ fn void sLdx(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     registers.set("x", node);
 }
 
+// load stack[-1] into X
+fn void sLdxnp(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
+    if (stack.len() < 1) {
+        io::printfn("[ERROR] ldx requires at least 1 value on the stack (Line %d)", line);
+        libc::exit(1);
+    }
+    Node node = stack.last()!!;
+    registers.set("x", node);
+}
+
 // push X to the stack
 fn void sStx(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("x")!!;
@@ -420,6 +433,15 @@ fn void sLdy(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     }
     Node node = stack.last()!!;
     sPop(stack, line);
+    registers.set("y", node);
+}
+
+fn void sLdynp(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
+    if (stack.len() < 1) {
+        io::printfn("[ERROR] ldy requires at least 1 value on the stack (Line %d)", line);
+        libc::exit(1);
+    }
+    Node node = stack.last()!!;
     registers.set("y", node);
 }
 
@@ -553,6 +575,51 @@ fn void sSsplt(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     }
 }
 
+fn void sPreg(Map(<String, Node>) *registers, usz line) {
+    Node x = registers.get("x")!!;
+    Node y = registers.get("y")!!;
+    io::printn("---- Registers ----");
+    switch (x.nodeType) {
+        case NodeType.INT: 
+            io::printfn("X -> Int: %d", x.value.v_int);
+        case NodeType.STRING: 
+            io::printfn("X -> String: \"%s\"", x.value.v_string);
+        case NodeType.BOOL:
+            String booleanValue = "false"; 
+            if (x.value.v_bool) {
+                booleanValue = "true";
+            }
+            io::printfn("X -> Bool: %s", booleanValue);
+        case NodeType.FLOAT:
+            io::printfn("X -> Float: %f", x.value.v_float);
+        case NodeType.ERR:
+            io::printfn("X -> ERROR: %s", x.value.v_string);
+        default:
+            io::print("X -> Unknown Type: "); // shouldnt happen?
+            io::printn(x.value);
+    }
+    switch (y.nodeType) {
+        case NodeType.INT: 
+            io::printfn("Y -> Int: %d", y.value.v_int);
+        case NodeType.STRING: 
+            io::printfn("Y -> String: \"%s\"", y.value.v_string);
+        case NodeType.BOOL:
+            String booleanValue = "false"; 
+            if (y.value.v_bool) {
+                booleanValue = "true";
+            }
+            io::printfn("Y -> Bool: %s", booleanValue);
+        case NodeType.FLOAT:
+            io::printfn("X -> Float: %f",y.value.v_float);
+        case NodeType.ERR:
+            io::printfn("Y -> ERROR: %s", y.value.v_string);
+        default:
+            io::print("Y -> Unknown Type: "); // shouldnt happen?
+            io::printn(y.value);
+    }
+    io::printn("-------------------");
+}
+
 // eval a single function and return `!` or the name of the next block/return
 // to go back to the previous block
 fn String eval(List(<Node>) *stack, Function *function, Map(<String, Node>) *registers) {
@@ -603,8 +670,12 @@ fn String eval(List(<Node>) *stack, Function *function, Map(<String, Node>) *reg
             sPrint(stack, function.line);
         case F_LDX:
             sLdx(stack, registers, function.line);
+        case F_LDXNP:
+            sLdxnp(stack, registers, function.line);
         case F_LDY:
             sLdy(stack, registers, function.line);
+        case F_LDYNP:
+            sLdynp(stack, registers, function.line);
         case F_STX:
             sStx(stack, registers, function.line);
         case F_STY:
@@ -623,6 +694,8 @@ fn String eval(List(<Node>) *stack, Function *function, Map(<String, Node>) *reg
             sChkerr(stack, function.line);
         case F_SSPLT:
             sSsplt(stack, registers, function.line);
+        case F_PREG:
+            sPreg(registers, function.line);
         default:
             io::printfn("[ERROR] FunctionType %s doesnt exist or is not implemented (Line %d)", function.line);
             libc::exit(1);
@@ -717,7 +790,9 @@ String[] keywords = {
     "call",
     //"return",
     "ldx",
+    "ldxnp",
     "ldy",
+    "ldynp",
     "stx",
     "sty",
     "txy",
@@ -729,6 +804,7 @@ String[] keywords = {
     "atf",
     "chkerr",
     "ssplt",
+    "preg",
     "eq",
     "ne",
     "lt",
@@ -1025,8 +1101,12 @@ fn Program createFromFile(String filePath, bool debug) {
                     //    add_block_function(&b, {.functionType = F_RETURN, .line = tokens[tokenIndex].line});
                     case ("ldx"):
                         add_block_function(&b, {.functionType = F_LDX, .line = tokens[tokenIndex].line});
-                    case ("ldy"):
+                    case ("ldxnp"):
+                        add_block_function(&b, {.functionType = F_LDXNP, .line = tokens[tokenIndex].line});
+                    case ("ldynp"):
                         add_block_function(&b, {.functionType = F_LDY, .line = tokens[tokenIndex].line});
+                    case ("ldy"):
+                        add_block_function(&b, {.functionType = F_LDYNP, .line = tokens[tokenIndex].line});
                     case ("stx"):
                         add_block_function(&b, {.functionType = F_STX, .line = tokens[tokenIndex].line});
                     case ("sty"):
@@ -1045,6 +1125,8 @@ fn Program createFromFile(String filePath, bool debug) {
                         add_block_function(&b, {.functionType = F_CHKERR, .line = tokens[tokenIndex].line});
                     case ("ssplt"):
                         add_block_function(&b, {.functionType = F_SSPLT, .line = tokens[tokenIndex].line});
+                    case ("preg"):
+                        add_block_function(&b, {.functionType = F_PREG, .line = tokens[tokenIndex].line});
                     default:
                         io::printfn("%s not implemented or does not exist (Line %d)", tokens[tokenIndex].value, tokens[tokenIndex].line);
                         libc::exit(1);

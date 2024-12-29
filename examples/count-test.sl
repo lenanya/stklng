@@ -7,7 +7,7 @@ main:
 loop_begin:
     stx;
     swp;
-    icmp le;
+    icmp lt;
     callcon loop;
 loop:
     pop;
