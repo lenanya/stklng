@@ -18,7 +18,8 @@ enum FunctionType {
 	F_PRINT, // print stack[-1]
 	F_CALLCON, // call a different block if stack[-1] is bool `true`
 	F_CALL, // call a different block unconditionally
-	F_RETURN, // return to the last block
+    // DEPRECATED
+	//F_RETURN, // return to the last block 
 	F_SWP, // swap stack[-1] with stack[-2]
 	F_DUP, // duplicate stack[-1]
     F_LDX, // load stack[-1] into X register
@@ -515,7 +516,7 @@ fn void sChkerr(List(<Node>) *stack, usz line) {
 
 // eval a single function and return `!` or the name of the next block/return
 // to go back to the previous block
-fn String eval(List(<Node>) *stack, Function function, Map(<String, Node>) *registers) {
+fn String eval(List(<Node>) *stack, Function *function, Map(<String, Node>) *registers) {
     switch (function.functionType) {
         case F_PUSH:
             sPush(stack, function.operand, function.line);
@@ -527,8 +528,8 @@ fn String eval(List(<Node>) *stack, Function function, Map(<String, Node>) *regi
             return *(String*)function.operand.value;
         case F_PRSTK: 
             sPrstk(stack, function.line);
-        case F_RETURN:
-            return "return";
+        //case F_RETURN:
+        //    return "return";
         case F_CALLCON:
             if (*(bool*)stack.last().value!!) {
                 return *(String*)function.operand.value;
@@ -580,31 +581,30 @@ fn String eval(List(<Node>) *stack, Function function, Map(<String, Node>) *regi
     return "!"; // this means stay in the same block
 }
 
-// execute a block based on name
-fn void exec(List(<Node>) *stack, Program program, Map(<String, Node>) *registers, String block, String lastBlock) {
-    Block current_block = program.blocks.get(block)!!;
-    usz i = current_block.last_line;
-    while (i < current_block.functions.len()) {
-        current_block.last_line = i + 1;
-        String next_block = eval(stack, current_block.functions[i], registers);
+fn String exec_block(List(<Node>) *stack, Program *program, Map(<String, Node>) *registers, Block* block) {
+    usz i = 0;
+    while (i < block.functions.len()) {
+        String next_block = eval(stack, block.functions.get_ref(i), registers);
         if (next_block != "!") {
-            if (next_block == "return") {
-                if (lastBlock == "none") {
-                    io::printn("[ERROR] Can't return from main");
-                    libc::exit(1);
-                }
-                current_block.last_line = 0;
-                program.blocks.set(block, current_block);
-                exec(stack, program, registers, lastBlock, block);
-            } else {
-                current_block.last_line = 0;
-                program.blocks.set(block, current_block);
-                exec(stack, program, registers, next_block, block);
-            }
+            return next_block;
         }
         ++i;
     }
-    // TODO: make not recursive so it actually works
+    return ".";
+}
+
+// execute a block based on name
+fn void exec(List(<Node>) *stack, Program *program, Map(<String, Node>) *registers, String block, String lastBlock) {
+    Block* current_block = program.blocks.get_ref(block)!!;
+    String next_block = "none";
+    while (next_block != ".") {
+        next_block = exec_block(stack, program, registers, current_block);
+        if (next_block == ".") {
+            break;
+        }
+        current_block = program.blocks.get_ref(next_block)!!;
+    }
+    io::printn("[INFO] Execution finished");
 }
 
 fn void add_block_function(Block *b, Function f) {
@@ -663,7 +663,7 @@ String[] keywords = {
     "print",
     "callcon",
     "call",
-    "return",
+    //"return",
     "ldx",
     "ldy",
     "stx",
@@ -966,8 +966,8 @@ fn Program createFromFile(String filePath, bool debug) {
                         add_block_function(&b, {.functionType = F_ISUB, .line = tokens[tokenIndex].line});
                     case ("addi"):
                         add_block_function(&b, {.functionType = F_ADDI, .line = tokens[tokenIndex].line});
-                    case ("return"):
-                        add_block_function(&b, {.functionType = F_RETURN, .line = tokens[tokenIndex].line});
+                    //case ("return"):
+                    //    add_block_function(&b, {.functionType = F_RETURN, .line = tokens[tokenIndex].line});
                     case ("ldx"):
                         add_block_function(&b, {.functionType = F_LDX, .line = tokens[tokenIndex].line});
                     case ("ldy"):
@@ -1036,6 +1036,6 @@ fn int main(String[] args) {
         return 1;
     }
 
-    exec(&stack, p, &registers, "main", "none");
+    exec(&stack, &p, &registers, "main", "none");
     return 0;
 }

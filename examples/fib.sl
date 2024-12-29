@@ -26,4 +26,4 @@ nextfib:
     stx;
     addi;
     print;
-    return;
+    call loop;

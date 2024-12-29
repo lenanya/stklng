@@ -1,6 +1,5 @@
 main:
     push "test.sf";
     ldx;
-    push "morbius";
-    wtf;
+    rdf;
     chkerr;
