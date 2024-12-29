@@ -996,7 +996,7 @@ fn Program createFromFile(String filePath, bool debug) {
         }
     }
     if (debug) {
-        io::printn("-------- Tokens --------\n");
+        io::printn("-------- Tokens --------");
         foreach (token: tokens) {
             io::print("    ");
             io::printn(token);
@@ -1142,7 +1142,7 @@ fn Program createFromFile(String filePath, bool debug) {
                 tokenIndex += 1;
             }
             if (debug) {
-                io::printn("-------- Functions --------\n");
+                io::printn("-------- Functions --------");
                 foreach (f: b.functions) {
                     io::printf("    %s: ", block_name);
                     io::printn(f);
