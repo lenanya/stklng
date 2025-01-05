@@ -27,3 +27,5 @@ https://github.com/lenanya/stklng-syntax
 https://marketplace.visualstudio.com/items?itemName=lenanya.stklng-syntax
 
 (you can also just search stklng in the vscode extension browser)
+
+#### great thanks to the folks in the C3 Discord server for answering my countless questions!
