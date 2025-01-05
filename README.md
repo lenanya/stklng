@@ -7,11 +7,20 @@ source code and execution are divided into blocks, which work similar to functio
 # to use
 
 to build from source:
-    You need the c3 compiler    
+    You need the c3 compiler https://github.com/c3lang/c3c
     then you can simply run
 ```console
 $ make
 ```
+
+or
+
+```console
+$ make install
+```
+
+to install it to `/usr/bin` so it's on your path
+
 
 or just download the release (linux only for now)
 
