@@ -23,3 +23,5 @@ $ ./stklng path_to_file.sl
 
 ### syntax highlighting for vscode
 https://github.com/lenanya/stklng-syntax
+https://marketplace.visualstudio.com/items?itemName=lenanya.stklng-syntax
+(you can also just search stklng in the vscode extension browser)
