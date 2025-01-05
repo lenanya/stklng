@@ -1,14 +1,15 @@
 # stklng
 
-stklng is a stack based interpreted programming language
-
-source code and execution are divided into blocks, which work similar to functions in other languages. 
+stklng is a stack based, minimalistic interpreted programming language
 
 # to use
 
-to build from source:
-    You need the c3 compiler https://github.com/c3lang/c3c
-    then you can simply run
+### build from source
+
+You need the c3 compiler https://github.com/c3lang/c3c
+   
+then you can simply run
+
 ```console
 $ make
 ```
@@ -21,12 +22,12 @@ $ make install
 
 to install it to `/usr/bin` so it's on your path
 
-
-or just download the release (linux only for now)
+### prebuilt binaries
+download the release (linux only for now)
 
 afterwards you can run .sl files with 
 ```console
-$ ./stklng path_to_file.sl
+$ path_to_stklng_executable/stklng-linux64 path/to/file.sl
 ```
 
 ## wiki
