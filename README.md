@@ -19,3 +19,7 @@ afterwards you can run .sl files with
 ```console
 $ ./stklng path_to_file.sl
 ```
+
+
+### syntax highlighting for vscode
+https://github.com/lenanya/stklng-syntax
