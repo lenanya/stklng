@@ -20,6 +20,9 @@ afterwards you can run .sl files with
 $ ./stklng path_to_file.sl
 ```
 
+## wiki
+https://github.com/lenanya/stklng/wiki
+
 
 ### syntax highlighting for vscode
 https://github.com/lenanya/stklng-syntax
