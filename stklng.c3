@@ -55,7 +55,7 @@ enum NodeType {
 
 union Value {
     String v_string;
-    int v_int;
+    int128 v_int;
     bool v_bool;
     float v_float;
 }
@@ -149,15 +149,15 @@ fn void sAddi(List(<Node>) *stack, usz line) {
             libc::exit(1);
     }
     
-    int addend = stack.last().value.v_int!!;
+    int128 addend = stack.last().value.v_int!!;
     sPop(stack, line);
     if (stack.last()!!.nodeType != NodeType.INT) {
         io::printfn("[ERROR] addi requires 2 integers on the stack (Line %d)", line);
         libc::exit(1);
     }
-    int addend2 = stack.last().value.v_int!!;
+    int128 addend2 = stack.last().value.v_int!!;
     sPop(stack, line);
-    int result = addend + addend2;
+    int128 result = addend + addend2;
     sPush(stack, {.nodeType = NodeType.INT, .value.v_int = result}, line);
 }
 
@@ -221,8 +221,8 @@ fn void sIcmp(List(<Node>) *stack, CmpType cmp, usz line) {
             libc::exit(1);
     }
 
-    int i1 = stack.last().value.v_int!!;
-    int i2 = stack.get(stack.len() - 2).value.v_int;
+    int128 i1 = stack.last().value.v_int!!;
+    int128 i2 = stack.get(stack.len() - 2).value.v_int;
     bool result;
     switch (cmp) {
         case EQ: result = i1 == i2;
@@ -303,15 +303,15 @@ fn void sIsub(List(<Node>) *stack, usz line) {
             libc::exit(1);
     }
 
-    int minuend = stack.last().value.v_int!!;
+    int128 minuend = stack.last().value.v_int!!;
     sPop(stack, line);
     if (stack.last()!!.nodeType != NodeType.INT) {
         io::printfn("[ERROR] isub requires 2 integers on the stack (Line %d)", line);
         libc::exit(1);
     }
-    int subtrahend = stack.last().value.v_int!!;
+    int128 subtrahend = stack.last().value.v_int!!;
     sPop(stack, line);
-    int result = minuend - subtrahend;
+    int128 result = minuend - subtrahend;
     sPush(stack, {.nodeType = NodeType.INT, .value.v_int = result}, line);
 }
 

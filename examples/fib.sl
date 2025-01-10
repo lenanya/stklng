@@ -3,7 +3,7 @@ main:
     push 0;
     push 1;
     print;
-    push 25;
+    push 184;
     ldynp;
     pop;
     call loop;
