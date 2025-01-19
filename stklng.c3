@@ -63,7 +63,7 @@ union Value {
 // values on the stack are nodes to allow multiple types
 // but still have type checking
 struct Node {
-    NodeType nodeType;
+    NodeType node_type;
     Value value;
     usz line;
 }
@@ -76,9 +76,9 @@ struct Block {
 
 // this is basically an instruction
 struct Function {
-    FunctionType functionType;
+    FunctionType function_type;
     Node operand;
-    CmpType cmpType;
+    CmpType cmp_type;
     usz line;
 }
 
@@ -94,17 +94,17 @@ fn void sPrstk(List(<Node>) *stack, usz line) {
     }
     io::printn("----     Stack    ----");
     foreach (i, node: stack) {
-        switch (node.nodeType) {
+        switch (node.node_type) {
             case NodeType.INT: 
                 io::printfn("%d Int: %d", i, node.value.v_int);
             case NodeType.STRING: 
                 io::printfn("%d String: \"%s\"", i, node.value.v_string);
             case NodeType.BOOL:
-                String booleanValue = "false"; 
+                String boolean_value = "false"; 
                 if (node.value.v_bool) {
-                    booleanValue = "true";
+                    boolean_value = "true";
                 }
-                io::printfn("%d Boolean: %s", i, booleanValue);
+                io::printfn("%d Boolean: %s", i, boolean_value);
             case NodeType.FLOAT:
                 io::printfn("%d Float: %f", i, node.value.v_float);
             case NodeType.ERR:
@@ -144,21 +144,21 @@ fn void sAddi(List(<Node>) *stack, usz line) {
         case stack.len() < 2:
             io::printfn("[ERROR] addi requires at least 2 values on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.last()!!.nodeType != NodeType.INT:
+        case stack.last()!!.node_type != NodeType.INT:
             io::printfn("[ERROR] addi requires 2 integers on the stack (Line %d)", line);
             libc::exit(1);
     }
     
     int128 addend = stack.last().value.v_int!!;
     sPop(stack, line);
-    if (stack.last()!!.nodeType != NodeType.INT) {
+    if (stack.last()!!.node_type != NodeType.INT) {
         io::printfn("[ERROR] addi requires 2 integers on the stack (Line %d)", line);
         libc::exit(1);
     }
     int128 addend2 = stack.last().value.v_int!!;
     sPop(stack, line);
     int128 result = addend + addend2;
-    sPush(stack, {.nodeType = NodeType.INT, .value.v_int = result}, line);
+    sPush(stack, {.node_type = NodeType.INT, .value.v_int = result}, line);
 }
 
 // add floats stack[-1] and stack[-2]
@@ -167,20 +167,20 @@ fn void sAddf(List(<Node>) *stack, usz line) {
         case stack.len() < 2:
             io::printfn("[ERROR] addf requires at least 2 values on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.last()!!.nodeType != NodeType.FLOAT:
+        case stack.last()!!.node_type != NodeType.FLOAT:
             io::printfn("[ERROR] addf requires 2 floats on the stack (Line %d)", line);
             libc::exit(1);
     }
     float addend = stack.last().value.v_float!!;
     sPop(stack, line);
-    if (stack.last()!!.nodeType != NodeType.FLOAT) {
+    if (stack.last()!!.node_type != NodeType.FLOAT) {
         io::printfn("[ERROR] addf requires 2 floats on the stack (Line %d)", line, line);
         libc::exit(1);
     }
     float addend2 = stack.last().value.v_float!!;
     sPop(stack, line);
     float result = addend + addend2;
-    sPush(stack, {.nodeType = NodeType.FLOAT, .value.v_float = result}, line);
+    sPush(stack, {.node_type = NodeType.FLOAT, .value.v_float = result}, line);
 }
 
 // concat stack[-2] to stack[-1]
@@ -189,21 +189,21 @@ fn void sScat(List(<Node>) *stack, usz line) {
         case stack.len() < 2:
             io::printfn("[ERROR] scat requires at least 2 values on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.last()!!.nodeType != NodeType.STRING:
+        case stack.last()!!.node_type != NodeType.STRING:
             io::printfn("[ERROR] scat requires 2 strings on the stack (Line %d)", line);
             libc::exit(1);
     }
 
     String s1 = stack.last().value.v_string!!;
     sPop(stack, line);
-    if (stack.last()!!.nodeType != NodeType.STRING) {
+    if (stack.last()!!.node_type != NodeType.STRING) {
         io::printfn("[ERROR] scat requires 2 strings on the stack (Line %d)", line);
         libc::exit(1);
     }
     String s2 = stack.last().value.v_string!!;
     sPop(stack, line);
     String final = s1.concat(s2);
-    sPush(stack, {.nodeType = NodeType.STRING, .value.v_string = final}, line);
+    sPush(stack, {.node_type = NodeType.STRING, .value.v_string = final}, line);
 }
 
 // compare ints stack[-1] to stack[-2] and push a bool
@@ -213,10 +213,10 @@ fn void sIcmp(List(<Node>) *stack, CmpType cmp, usz line) {
         case stack.len() < 2:
             io::printfn("[ERROR] icmp requires at least 2 values on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.last()!!.nodeType != NodeType.INT:
+        case stack.last()!!.node_type != NodeType.INT:
             io::printfn("[ERROR] icmp requires 2 integers on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.get(stack.len() - 2).nodeType != NodeType.INT:
+        case stack.get(stack.len() - 2).node_type != NodeType.INT:
             io::printfn("[ERROR] icmp requires 2 integers on the stack (Line %d)", line);
             libc::exit(1);
     }
@@ -232,7 +232,7 @@ fn void sIcmp(List(<Node>) *stack, CmpType cmp, usz line) {
         case GT: result = i1 > i2;
         case GE: result = i1 >= i2;
     }
-    sPush(stack, {.nodeType = NodeType.BOOL, .value.v_bool = result}, line);
+    sPush(stack, {.node_type = NodeType.BOOL, .value.v_bool = result}, line);
 }
 
 // compare floats stack[-1] to stack[-2] and push a bool
@@ -242,10 +242,10 @@ fn void sFcmp(List(<Node>) *stack, CmpType cmp, usz line) {
         case stack.len() < 2:
             io::printfn("[ERROR] fcmp requires at least 2 values on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.last()!!.nodeType != NodeType.FLOAT:
+        case stack.last()!!.node_type != NodeType.FLOAT:
             io::printfn("[ERROR] fcmp requires 2 floats on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.get(stack.len() - 2).nodeType != NodeType.FLOAT:
+        case stack.get(stack.len() - 2).node_type != NodeType.FLOAT:
             io::printfn("[ERROR] fcmp requires 2 floats on the stack (Line %d)", line);
             libc::exit(1);
     }
@@ -261,7 +261,7 @@ fn void sFcmp(List(<Node>) *stack, CmpType cmp, usz line) {
         case GT: result = f1 > f2;
         case GE: result = f1 >= f2;
     }
-    sPush(stack, {.nodeType = NodeType.BOOL, .value.v_bool = result}, line);
+    sPush(stack, {.node_type = NodeType.BOOL, .value.v_bool = result}, line);
 }
 
 // compare strings stack[-1] to stack[-2] and push a bool
@@ -271,10 +271,10 @@ fn void sScmp(List(<Node>) *stack, CmpType cmp, usz line) {
         case stack.len() < 2:
             io::printfn("[ERROR] scmp requires at least 2 values on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.last()!!.nodeType != NodeType.STRING:
+        case stack.last()!!.node_type != NodeType.STRING:
             io::printfn("[ERROR] scmp requires 2 Strings on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.get(stack.len() - 2).nodeType != NodeType.STRING:
+        case stack.get(stack.len() - 2).node_type != NodeType.STRING:
             io::printfn("[ERROR] scmp requires 2 Strings on the stack (Line %d)", line);
             libc::exit(1);
     }
@@ -289,7 +289,7 @@ fn void sScmp(List(<Node>) *stack, CmpType cmp, usz line) {
             io::printn("[ERROR] invalid cmptype for String");
             libc::exit(1);
     }
-    sPush(stack, {.nodeType = NodeType.BOOL, .value.v_bool = result}, line);
+    sPush(stack, {.node_type = NodeType.BOOL, .value.v_bool = result}, line);
 }
 
 // subtract floats stack[-2] from stack[-1]
@@ -298,21 +298,21 @@ fn void sIsub(List(<Node>) *stack, usz line) {
         case stack.len() < 2:
             io::printfn("[ERROR] isub requires at least 2 values on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.last()!!.nodeType != NodeType.INT:
+        case stack.last()!!.node_type != NodeType.INT:
             io::printfn("[ERROR] isub requires 2 integers on the stack (Line %d)", line);
             libc::exit(1);
     }
 
     int128 minuend = stack.last().value.v_int!!;
     sPop(stack, line);
-    if (stack.last()!!.nodeType != NodeType.INT) {
+    if (stack.last()!!.node_type != NodeType.INT) {
         io::printfn("[ERROR] isub requires 2 integers on the stack (Line %d)", line);
         libc::exit(1);
     }
     int128 subtrahend = stack.last().value.v_int!!;
     sPop(stack, line);
     int128 result = minuend - subtrahend;
-    sPush(stack, {.nodeType = NodeType.INT, .value.v_int = result}, line);
+    sPush(stack, {.node_type = NodeType.INT, .value.v_int = result}, line);
 }
 
 // subtract integers stack[-2] from stack[-1]
@@ -321,21 +321,21 @@ fn void sFsub(List(<Node>) *stack, usz line) {
         case stack.len() < 2:
             io::printfn("[ERROR] fsub requires at least 2 values on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.last()!!.nodeType != NodeType.FLOAT:
+        case stack.last()!!.node_type != NodeType.FLOAT:
             io::printfn("[ERROR] fsub requires 2 floats on the stack (Line %d)", line);
             libc::exit(1);
     }
 
     float minuend = stack.last().value.v_float!!;
     sPop(stack, line);
-    if (stack.last()!!.nodeType != NodeType.FLOAT) {
+    if (stack.last()!!.node_type != NodeType.FLOAT) {
         io::printfn("[ERROR] fsub requires 2 floats on the stack (Line %d)", line);
         libc::exit(1);
     }
     float subtrahend = stack.last().value.v_float!!;
     sPop(stack, line);
     float result = minuend - subtrahend;
-    sPush(stack, {.nodeType = NodeType.FLOAT, .value.v_float = result}, line);
+    sPush(stack, {.node_type = NodeType.FLOAT, .value.v_float = result}, line);
 }
 
 // swap stack[-1] with stack[-2]
@@ -357,22 +357,22 @@ fn void sDup(List(<Node>) *stack, usz line) {
     sPush(stack, node, line);
 }
 
-// print stack[-1]// append stack[-1] to the file with the filePath in X register
+// print stack[-1]// append stack[-1] to the file with the file_path in X register
 fn void sPrint(List(<Node>) *stack, usz line) {
     if (stack.len() < 1) {
         io::printfn("[ERROR] print requires at least 1 value on the stack (Line %d)", line);
         libc::exit(1);
     }
     Node node = stack.last()!!;
-    switch (node.nodeType) {
+    switch (node.node_type) {
             case NodeType.INT: 
                 io::printn(node.value.v_int);
             case NodeType.STRING: 
                 io::printn(node.value.v_string);
             case NodeType.BOOL:
-                String booleanValue = "false"; 
-                if (node.value.v_bool) booleanValue = "true";
-                io::printn(booleanValue);
+                String boolean_value = "false"; 
+                if (node.value.v_bool) boolean_value = "true";
+                io::printn(boolean_value);
             case NodeType.FLOAT:
                 io::printn(node.value.v_float);
             case NodeType.ERR:
@@ -448,80 +448,80 @@ fn void sTyx(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     registers.set("x", node);
 }
 
-// read entire file with the filePath in X and push the result onto the stack
+// read entire file with the file_path in X and push the result onto the stack
 fn void sRdf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("x")!!;
-    if (node.nodeType != NodeType.STRING) {
+    if (node.node_type != NodeType.STRING) {
         io::printfn("[ERROR] rdf requires a String in the X register (Line %d)", line);
         libc::exit(1);
     }
-    String! entireFile = (String)file::load_temp(node.value.v_string);
-    if (try entireFile) {
-        Node nodeToPush = {.nodeType = NodeType.STRING, .value.v_string = entireFile};
-        sPush(stack, nodeToPush, line);
+    String! entire_file = (String)file::load_temp(node.value.v_string);
+    if (try entire_file) {
+        Node node_to_push = {.node_type = NodeType.STRING, .value.v_string = entire_file};
+        sPush(stack, node_to_push, line);
     } else {
-        Node nodeToPush = {.nodeType = NodeType.ERR, .value.v_string = "FileNotFound", .line = line};
-        sPush(stack, nodeToPush, line);
+        Node node_to_push = {.node_type = NodeType.ERR, .value.v_string = "FileNotFound", .line = line};
+        sPush(stack, node_to_push, line);
     }
 }
 
-// write stack[-1] to the file with the filePath in X register
+// write stack[-1] to the file with the file_path in X register
 fn void sWtf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("x")!!;
 
     switch {
-        case node.nodeType != NodeType.STRING:
+        case node.node_type != NodeType.STRING:
             io::printfn("[ERROR] wtf requires a String in the X register (Line %d)", line);
             libc::exit(1);
         case stack.len() < 1:
             io::printfn("[ERROR] wtf requires at least 1 value on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.last()!!.nodeType != NodeType.STRING:
+        case stack.last()!!.node_type != NodeType.STRING:
             io::printfn("[ERROR] wtf requires a String on the stack (Line %d)", line);
             libc::exit(1);
     }
 
-    File! toWrite = file::open(node.value.v_string, "w")!!;
-    if (try toWrite) {
-        usz! success = toWrite.write(stack.last().value.v_string!!);
+    File! to_write = file::open(node.value.v_string, "w")!!;
+    if (try to_write) {
+        usz! success = to_write.write(stack.last().value.v_string!!);
         if (@catch(success)) {
-            Node nodeToPush = {.nodeType = NodeType.ERR, .value.v_string = "FileWriteError", .line = line};
-            sPush(stack, nodeToPush, line);
+            Node node_to_push = {.node_type = NodeType.ERR, .value.v_string = "FileWriteError", .line = line};
+            sPush(stack, node_to_push, line);
         }
-        toWrite.close()!!;
+        to_write.close()!!;
     } else {
-        Node nodeToPush = {.nodeType = NodeType.ERR, .value.v_string = "FileNotFound", .line = line};
-        sPush(stack, nodeToPush, line);
+        Node node_to_push = {.node_type = NodeType.ERR, .value.v_string = "FileNotFound", .line = line};
+        sPush(stack, node_to_push, line);
     }
 }
 
-// append stack[-1] to the file with the filePath in X register
+// append stack[-1] to the file with the file_path in X register
 fn void sAtf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("x")!!;
 
     switch {
-        case node.nodeType != NodeType.STRING:
+        case node.node_type != NodeType.STRING:
             io::printfn("[ERROR] atf requires a String in the X register (Line %d)", line);
             libc::exit(1);
         case stack.len() < 1:
             io::printfn("[ERROR] atf requires at least 1 value on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.last()!!.nodeType != NodeType.STRING:
+        case stack.last()!!.node_type != NodeType.STRING:
             io::printfn("[ERROR] atf requires a String on the stack (Line %d)", line);
             libc::exit(1);
     }
 
-    File! toWrite = file::open(node.value.v_string, "a");
-    if (try toWrite) {
-        usz! success = toWrite.write(stack.last().value.v_string!!);
+    File! to_write = file::open(node.value.v_string, "a");
+    if (try to_write) {
+        usz! success = to_write.write(stack.last().value.v_string!!);
         if (@catch(success)) {
-            Node nodeToPush = {.nodeType = NodeType.ERR, .value.v_string = "FileWriteError", .line = line};
-            sPush(stack, nodeToPush, line);
+            Node node_to_push = {.node_type = NodeType.ERR, .value.v_string = "FileWriteError", .line = line};
+            sPush(stack, node_to_push, line);
         }
-        toWrite.close()!!;
+        to_write.close()!!;
     } else {
-        Node nodeToPush = {.nodeType = NodeType.ERR, .value.v_string = "FileNotFound", .line = line};
-        sPush(stack, nodeToPush, line);
+        Node node_to_push = {.node_type = NodeType.ERR, .value.v_string = "FileNotFound", .line = line};
+        sPush(stack, node_to_push, line);
     }
 }
 
@@ -532,7 +532,7 @@ fn void sChkerr(List(<Node>) *stack, usz line) {
         case stack.len() < 1:
             io::printfn("[ERROR] chkerr requires at least 1 value on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.last()!!.nodeType == NodeType.ERR:
+        case stack.last()!!.node_type == NodeType.ERR:
             io::printfn("[ERROR] %s in chkerr (Line %d)", stack.last()!!.value.v_string, line);
             libc::exit(1);
     }
@@ -542,27 +542,27 @@ fn void sSsplt(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("x")!!;
 
     switch {
-        case node.nodeType != NodeType.STRING:
+        case node.node_type != NodeType.STRING:
             io::printfn("[ERROR] ssplit requires a String in the X register (Line %d)", line);
             libc::exit(1);
         case stack.len() < 1:
             io::printfn("[ERROR] ssplit requires at least 1 value on the stack (Line %d)", line);
             libc::exit(1);
-        case stack.last()!!.nodeType != NodeType.STRING:
+        case stack.last()!!.node_type != NodeType.STRING:
             io::printfn("[ERROR] ssplit requires a String on the stack (Line %d)", line);
             libc::exit(1);
     }
 
     String needle = node.value.v_string;
-    String toSplit = stack.last().value.v_string!!;
+    String to_split = stack.last().value.v_string!!;
     sPop(stack, line);
-    String[] splits = toSplit.split(needle);
+    String[] splits = to_split.split(needle);
     foreach (split: splits) {
-        Node nodeToPush = {
-            .nodeType = NodeType.STRING, 
+        Node node_to_push = {
+            .node_type = NodeType.STRING, 
             .value.v_string = split
         };
-        sPush(stack, nodeToPush, line);
+        sPush(stack, node_to_push, line);
     }
 }
 
@@ -570,15 +570,15 @@ fn void sPreg(Map(<String, Node>) *registers, usz line) {
     Node x = registers.get("x")!!;
     Node y = registers.get("y")!!;
     io::printn("---- Registers ----");
-    switch (x.nodeType) {
+    switch (x.node_type) {
         case NodeType.INT: 
             io::printfn("X -> Int: %d", x.value.v_int);
         case NodeType.STRING: 
             io::printfn("X -> String: \"%s\"", x.value.v_string);
         case NodeType.BOOL:
-            String booleanValue = "false"; 
-            if (x.value.v_bool) booleanValue = "true";
-            io::printfn("X -> Bool: %s", booleanValue);
+            String boolean_value = "false"; 
+            if (x.value.v_bool) boolean_value = "true";
+            io::printfn("X -> Bool: %s", boolean_value);
         case NodeType.FLOAT:
             io::printfn("X -> Float: %f", x.value.v_float);
         case NodeType.ERR:
@@ -587,15 +587,15 @@ fn void sPreg(Map(<String, Node>) *registers, usz line) {
             io::print("X -> Unknown Type: "); // shouldnt happen?
             io::printn(x.value);
     }
-    switch (y.nodeType) {
+    switch (y.node_type) {
         case NodeType.INT: 
             io::printfn("Y -> Int: %d", y.value.v_int);
         case NodeType.STRING: 
             io::printfn("Y -> String: \"%s\"", y.value.v_string);
         case NodeType.BOOL:
-            String booleanValue = "false"; 
-            if (y.value.v_bool) booleanValue = "true";
-            io::printfn("Y -> Bool: %s", booleanValue);
+            String boolean_value = "false"; 
+            if (y.value.v_bool) boolean_value = "true";
+            io::printfn("Y -> Bool: %s", boolean_value);
         case NodeType.FLOAT:
             io::printfn("X -> Float: %f",y.value.v_float);
         case NodeType.ERR:
@@ -610,7 +610,7 @@ fn void sPreg(Map(<String, Node>) *registers, usz line) {
 // eval a single function and return `!` or the name of the next block/return
 // to go back to the previous block
 fn String eval(List(<Node>) *stack, Function *function, Map(<String, Node>) *registers) {
-    switch (function.functionType) {
+    switch (function.function_type) {
         case F_PUSH:
             sPush(stack, function.operand, function.line);
         case F_POP:     
@@ -626,7 +626,7 @@ fn String eval(List(<Node>) *stack, Function *function, Map(<String, Node>) *reg
                 io::printfn("[ERROR] callcon requires at least one value on the stack (Line %d)", function.line);
                 libc::exit(1);
             }
-            if (stack.last().nodeType!! != NodeType.BOOL) {
+            if (stack.last().node_type!! != NodeType.BOOL) {
                 io::printfn("[ERROR] callcon requires at least one boolean on the stack (Line %d)", function.line);
                 libc::exit(1);
             }
@@ -646,11 +646,11 @@ fn String eval(List(<Node>) *stack, Function *function, Map(<String, Node>) *reg
         case F_SCAT:
             sScat(stack, function.line);
         case F_ICMP:
-            sIcmp(stack, function.cmpType, function.line);
+            sIcmp(stack, function.cmp_type, function.line);
         case F_FCMP:
-            sFcmp(stack, function.cmpType, function.line);
+            sFcmp(stack, function.cmp_type, function.line);
         case F_SCMP:
-            sScmp(stack, function.cmpType, function.line);
+            sScmp(stack, function.cmp_type, function.line);
         case F_PRINT:
             sPrint(stack, function.line);
         case F_LDX:
@@ -713,21 +713,21 @@ fn void exec(List(<Node>) *stack, Program *program, Map(<String, Node>) *registe
     io::printn("[INFO] Execution finished");
 }
 
-fn void add_block_function(Block *b, Function f) {
-    b.functions.push(f);
+fn void add_block_function(Block *block, Function f) {
+    block.functions.push(f);
 }
 
 fn Block init_block() {
-    Block b = {};
-    b.last_line = 0;
-    return b;
+    Block block = {};
+    block.last_line = 0;
+    return block;
 }
 
-fn void add_block_to_program(Program *p, Block b, String b_name) {
-    p.blocks.set(b_name, b);
+fn void add_block_to_program(Program *program, Block block, String b_name) {
+    program.blocks.set(b_name, block);
 }
 
-// helper functions for createFromFile()
+// helper functions for create_from_file()
 
 fn bool is_whitespace(String token) {
     foreach (c: token) {
@@ -747,7 +747,7 @@ enum TokenType {
 }
 
 struct Token {
-    TokenType tokenType;
+    TokenType token_type;
     String value;
     usz line;
 }
@@ -844,8 +844,8 @@ fn bool is_punct(String token) {
 }
 
 fn bool is_boolean(String token) {
-    foreach (b: booleans) {
-        if (token == b) {
+    foreach (block: booleans) {
+        if (token == block) {
             return true;
         }
     }
@@ -854,7 +854,7 @@ fn bool is_boolean(String token) {
 
 fn void error_msg(String expected, Token token) {
     io::printf("[ERROR] Expected `%s`, got ", expected);
-    io::print(token.tokenType);
+    io::print(token.token_type);
     io::print(": ");
     io::print(token.value);
     io::printfn(" in line %d", token.line);
@@ -863,9 +863,9 @@ fn void error_msg(String expected, Token token) {
 
 // create a Program struct containing blocks
 // which can then get executed
-fn Program createFromFile(String filePath, bool debug) {
-    String entireFile = (String)file::load_temp(filePath)!!;
-    String[] lines = entireFile.split("\n");
+fn Program create_from_file(String file_path, bool debug) {
+    String entire_file = (String)file::load_temp(file_path)!!;
+    String[] lines = entire_file.split("\n");
     List(<String>) tokenstrings;
     List(<usz>) indices;
     foreach (i, line: lines) {
@@ -931,43 +931,43 @@ fn Program createFromFile(String filePath, bool debug) {
         switch {
             case (is_keyword(tokenstring)):
                 tokens.push({
-                    .tokenType = KEYWORD, 
+                    .token_type = KEYWORD, 
                     .value = tokenstring, 
                     .line = indices.get(i)
                 });
             case (is_integer(tokenstring)):
                 tokens.push({
-                    .tokenType = INTEGER, 
+                    .token_type = INTEGER, 
                     .value = tokenstring.strip("_"), 
                     .line = indices.get(i)
                 });
             case (tokenstring.starts_with("\"")):
                 tokens.push({
-                    .tokenType = STRING, 
+                    .token_type = STRING, 
                     .value = tokenstring.strip("\"").strip_end("\""), 
                     .line = indices.get(i)
                 });
             case (is_float(tokenstring)):
                 tokens.push({
-                    .tokenType = FLOAT, 
+                    .token_type = FLOAT, 
                     .value = tokenstring, 
                     .line = indices.get(i)
                 });
             case (is_punct(tokenstring)):
                 tokens.push({
-                    .tokenType = PUNCT, 
+                    .token_type = PUNCT, 
                     .value = tokenstring, 
                     .line = indices.get(i)
                 });
             case (is_boolean(tokenstring)):
                 tokens.push({
-                    .tokenType = BOOL, 
+                    .token_type = BOOL, 
                     .value = tokenstring, 
                     .line = indices.get(i)
                 });
             default:
                 tokens.push({
-                    .tokenType = SYMBOL, 
+                    .token_type = SYMBOL, 
                     .value = tokenstring, 
                     .line = indices.get(i)
                 });
@@ -983,287 +983,287 @@ fn Program createFromFile(String filePath, bool debug) {
         io::printn("-------- Tokens --------\n");
     }
 
-    Program p = {};
-    usz tokenIndex = 0;
+    Program program = {};
+    usz token_index = 0;
    
     switch {
         case (tokens.len() == 0):
             libc::exit(0);
-        case (tokens[tokenIndex].tokenType != SYMBOL):
+        case (tokens[token_index].token_type != SYMBOL):
             io::printn("[ERROR] File needs to start with a block");
             libc::exit(0);
     }
 
-    while (tokenIndex < tokens.len()) {
-        if (tokens[tokenIndex].tokenType == SYMBOL) {
-            Block b;
-            b.last_line = 0;
-            String block_name = tokens[tokenIndex].value;
+    while (token_index < tokens.len()) {
+        if (tokens[token_index].token_type == SYMBOL) {
+            Block block;
+            block.last_line = 0;
+            String block_name = tokens[token_index].value;
 
-            tokenIndex += 1;
+            token_index += 1;
 
             switch {
-                case (tokens[tokenIndex].tokenType != PUNCT): // expect {
-                    error_msg(":", tokens[tokenIndex]);
-                case (tokens[tokenIndex].value != ":"):
-                    error_msg(":", tokens[tokenIndex]);
+                case (tokens[token_index].token_type != PUNCT): // expect {
+                    error_msg(":", tokens[token_index]);
+                case (tokens[token_index].value != ":"):
+                    error_msg(":", tokens[token_index]);
             }
 
-            tokenIndex += 1;
+            token_index += 1;
 
-            while (tokenIndex < tokens.len() && tokens[tokenIndex + 1].value != ":") {
-                if (tokens[tokenIndex].tokenType != KEYWORD) {
-                    error_msg("keyword", tokens[tokenIndex]);
+            while (token_index < tokens.len() && tokens[token_index + 1].value != ":") {
+                if (tokens[token_index].token_type != KEYWORD) {
+                    error_msg("keyword", tokens[token_index]);
                 }
-                switch (tokens[tokenIndex].value) {
+                switch (tokens[token_index].value) {
                     case ("push"):
-                        tokenIndex += 1;
-                        switch (tokens[tokenIndex].tokenType) {
+                        token_index += 1;
+                        switch (tokens[token_index].token_type) {
                             case STRING:
-                                add_block_function(&b, {
-                                    .functionType = F_PUSH, 
+                                add_block_function(&block, {
+                                    .function_type = F_PUSH, 
                                     .operand = {
-                                        .nodeType = NodeType.STRING, 
-                                        .value.v_string = tokens[tokenIndex].value
+                                        .node_type = NodeType.STRING, 
+                                        .value.v_string = tokens[token_index].value
                                     }, 
-                                    .line = tokens[tokenIndex].line
+                                    .line = tokens[token_index].line
                                 });
                             case BOOL:
                                 bool val;
-                                if (tokens[tokenIndex].value == "true") {
+                                if (tokens[token_index].value == "true") {
                                     val = true;
                                 } else {
                                     val = false;
                                 }
-                                add_block_function(&b, {
-                                    .functionType = F_PUSH, 
+                                add_block_function(&block, {
+                                    .function_type = F_PUSH, 
                                     .operand = {
-                                        .nodeType = NodeType.BOOL, 
+                                        .node_type = NodeType.BOOL, 
                                         .value.v_bool = val}, 
-                                    .line = tokens[tokenIndex].line
+                                    .line = tokens[token_index].line
                                 });
                             case INTEGER:
-                                add_block_function(&b, {
-                                    .functionType = F_PUSH, 
+                                add_block_function(&block, {
+                                    .function_type = F_PUSH, 
                                     .operand = {
-                                        .nodeType = NodeType.INT, 
-                                        .value.v_int = tokens[tokenIndex].value.to_int()!!
+                                        .node_type = NodeType.INT, 
+                                        .value.v_int = tokens[token_index].value.to_int()!!
                                     }, 
-                                    .line = tokens[tokenIndex].line
+                                    .line = tokens[token_index].line
                                 });
                             case FLOAT:
-                                add_block_function(&b, {
-                                    .functionType = F_PUSH, 
+                                add_block_function(&block, {
+                                    .function_type = F_PUSH, 
                                     .operand = {
-                                        .nodeType = NodeType.FLOAT, 
-                                        .value.v_float = tokens[tokenIndex].value.to_float()!!
+                                        .node_type = NodeType.FLOAT, 
+                                        .value.v_float = tokens[token_index].value.to_float()!!
                                     }, 
-                                    .line = tokens[tokenIndex].line
+                                    .line = tokens[token_index].line
                                 });
                             default:
-                                error_msg("String, bool, int or float", tokens[tokenIndex]);
+                                error_msg("String, bool, int or float", tokens[token_index]);
                         }
                     case ("print"):
-                        add_block_function(&b, {
-                            .functionType = F_PRINT, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_PRINT, 
+                            .line = tokens[token_index].line
                         });
                     case ("swp"):
-                        add_block_function(&b, {
-                            .functionType = F_SWP, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_SWP, 
+                            .line = tokens[token_index].line
                         });
                     case ("dup"):
-                        add_block_function(&b, {
-                            .functionType = F_DUP, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_DUP, 
+                            .line = tokens[token_index].line
                         });
                     case ("icmp"):
-                        tokenIndex += 1;
-                        if (tokens[tokenIndex].tokenType != KEYWORD) {
-                            error_msg("comparison type", tokens[tokenIndex]);
+                        token_index += 1;
+                        if (tokens[token_index].token_type != KEYWORD) {
+                            error_msg("comparison type", tokens[token_index]);
                         }
-                        switch (tokens[tokenIndex].value) {
+                        switch (tokens[token_index].value) {
                             case ("eq"):
-                                add_block_function(&b, {
-                                    .functionType = F_ICMP, 
-                                    .cmpType = EQ, 
-                                    .line = tokens[tokenIndex].line
+                                add_block_function(&block, {
+                                    .function_type = F_ICMP, 
+                                    .cmp_type = EQ, 
+                                    .line = tokens[token_index].line
                                 });
                             case ("ne"):
-                                add_block_function(&b, {
-                                    .functionType = F_ICMP, 
-                                    .cmpType = NE, 
-                                    .line = tokens[tokenIndex].line
+                                add_block_function(&block, {
+                                    .function_type = F_ICMP, 
+                                    .cmp_type = NE, 
+                                    .line = tokens[token_index].line
                                 });
                             case ("lt"):
-                                add_block_function(&b, {
-                                    .functionType = F_ICMP, 
-                                    .cmpType = LT, 
-                                    .line = tokens[tokenIndex].line
+                                add_block_function(&block, {
+                                    .function_type = F_ICMP, 
+                                    .cmp_type = LT, 
+                                    .line = tokens[token_index].line
                                 });
                             case ("le"):
-                                add_block_function(&b, {
-                                    .functionType = F_ICMP, 
-                                    .cmpType = LE, 
-                                    .line = tokens[tokenIndex].line
+                                add_block_function(&block, {
+                                    .function_type = F_ICMP, 
+                                    .cmp_type = LE, 
+                                    .line = tokens[token_index].line
                                 });
                             case ("gt"):
-                                add_block_function(&b, {
-                                    .functionType = F_ICMP, 
-                                    .cmpType = GT, 
-                                    .line = tokens[tokenIndex].line
+                                add_block_function(&block, {
+                                    .function_type = F_ICMP, 
+                                    .cmp_type = GT, 
+                                    .line = tokens[token_index].line
                                 });
                             case ("ge"):
-                                add_block_function(&b, {
-                                    .functionType = F_ICMP, 
-                                    .cmpType = GE, 
-                                    .line = tokens[tokenIndex].line
+                                add_block_function(&block, {
+                                    .function_type = F_ICMP, 
+                                    .cmp_type = GE, 
+                                    .line = tokens[token_index].line
                                 });
                             default:
-                                error_msg("comparison type", tokens[tokenIndex]);
+                                error_msg("comparison type", tokens[token_index]);
                         }
                     case ("callcon"):
-                        tokenIndex += 1;
-                        if (tokens[tokenIndex].tokenType != SYMBOL) {
-                            error_msg("block name", tokens[tokenIndex]);
+                        token_index += 1;
+                        if (tokens[token_index].token_type != SYMBOL) {
+                            error_msg("block name", tokens[token_index]);
                         }
-                        add_block_function(&b, {
-                            .functionType = F_CALLCON, 
+                        add_block_function(&block, {
+                            .function_type = F_CALLCON, 
                             .operand = {
-                                .nodeType = NodeType.STRING, 
-                                .value.v_string = tokens[tokenIndex].value
+                                .node_type = NodeType.STRING, 
+                                .value.v_string = tokens[token_index].value
                             }, 
-                            .line = tokens[tokenIndex].line
+                            .line = tokens[token_index].line
                         });
                     case ("call"):
-                        tokenIndex += 1;
-                        if (tokens[tokenIndex].tokenType != SYMBOL) {
-                            error_msg("block name", tokens[tokenIndex]);
+                        token_index += 1;
+                        if (tokens[token_index].token_type != SYMBOL) {
+                            error_msg("block name", tokens[token_index]);
                         }
-                        add_block_function(&b, {
-                            .functionType = F_CALL, 
+                        add_block_function(&block, {
+                            .function_type = F_CALL, 
                             .operand = {
-                                .nodeType = NodeType.STRING, 
-                                .value.v_string = tokens[tokenIndex].value
-                            }, .line = tokens[tokenIndex].line
+                                .node_type = NodeType.STRING, 
+                                .value.v_string = tokens[token_index].value
+                            }, .line = tokens[token_index].line
                         });
                     case ("prstk"):
-                        add_block_function(&b, {
-                            .functionType = F_PRSTK, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_PRSTK, 
+                            .line = tokens[token_index].line
                         });
                     case ("pop"):
-                        add_block_function(&b, {
-                            .functionType = F_POP, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_POP, 
+                            .line = tokens[token_index].line
                         });
                     case ("isub"):
-                        add_block_function(&b, {
-                            .functionType = F_ISUB, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_ISUB, 
+                            .line = tokens[token_index].line
                         });
                     case ("addi"):
-                        add_block_function(&b, {
-                            .functionType = F_ADDI, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_ADDI, 
+                            .line = tokens[token_index].line
                         });
                     case ("ldx"):
-                        add_block_function(&b, {
-                            .functionType = F_LDX, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_LDX, 
+                            .line = tokens[token_index].line
                         });
                     case ("ldxnp"):
-                        add_block_function(&b, {
-                            .functionType = F_LDXNP, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_LDXNP, 
+                            .line = tokens[token_index].line
                         });
                     case ("ldynp"):
-                        add_block_function(&b, {
-                            .functionType = F_LDYNP, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_LDYNP, 
+                            .line = tokens[token_index].line
                         });
                     case ("ldy"):
-                        add_block_function(&b, {
-                            .functionType = F_LDY, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_LDY, 
+                            .line = tokens[token_index].line
                         });
                     case ("stx"):
-                        add_block_function(&b, {
-                            .functionType = F_STX, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_STX, 
+                            .line = tokens[token_index].line
                         });
                     case ("sty"):
-                        add_block_function(&b, {
-                            .functionType = F_STY, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_STY, 
+                            .line = tokens[token_index].line
                         });
                     case ("txy"):
-                        add_block_function(&b, {
-                            .functionType = F_TXY, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_TXY, 
+                            .line = tokens[token_index].line
                         });
                     case ("tyx"):
-                        add_block_function(&b, {
-                            .functionType = F_TYX, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_TYX, 
+                            .line = tokens[token_index].line
                         });
                     case ("rdf"):
-                        add_block_function(&b, {
-                            .functionType = F_RDF, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_RDF, 
+                            .line = tokens[token_index].line
                         });
                     case ("wtf"):
-                        add_block_function(&b, {
-                            .functionType = F_WTF, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_WTF, 
+                            .line = tokens[token_index].line
                         });
                     case ("atf"):
-                        add_block_function(&b, {
-                            .functionType = F_ATF, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_ATF, 
+                            .line = tokens[token_index].line
                         });
                     case ("chkerr"):
-                        add_block_function(&b, {
-                            .functionType = F_CHKERR, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_CHKERR, 
+                            .line = tokens[token_index].line
                         });
                     case ("ssplt"):
-                        add_block_function(&b, {
-                            .functionType = F_SSPLT, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_SSPLT, 
+                            .line = tokens[token_index].line
                         });
                     case ("preg"):
-                        add_block_function(&b, {
-                            .functionType = F_PREG, 
-                            .line = tokens[tokenIndex].line
+                        add_block_function(&block, {
+                            .function_type = F_PREG, 
+                            .line = tokens[token_index].line
                         });
                     default:
-                        io::printfn("%s not implemented or does not exist (Line %d)", tokens[tokenIndex].value, tokens[tokenIndex].line);
+                        io::printfn("%s not implemented or does not exist (Line %d)", tokens[token_index].value, tokens[token_index].line);
                         libc::exit(1);
                 }
-                tokenIndex += 1;
+                token_index += 1;
                 
                 switch {
-                    case tokens[tokenIndex].tokenType != PUNCT:
-                        error_msg(";", tokens[tokenIndex]);
-                    case tokens[tokenIndex].value != ";":
-                        error_msg(";", tokens[tokenIndex]);
+                    case tokens[token_index].token_type != PUNCT:
+                        error_msg(";", tokens[token_index]);
+                    case tokens[token_index].value != ";":
+                        error_msg(";", tokens[token_index]);
                 }
-                tokenIndex += 1;
+                token_index += 1;
             }
             if (debug) {
                 io::printn("-------- Functions --------");
-                foreach (f: b.functions) {
+                foreach (f: block.functions) {
                     io::printf("    %s: ", block_name);
                     io::printn(f);
                 }
                 io::printn("-------- Functions --------\n");
             }
-            add_block_to_program(&p, b, block_name);
+            add_block_to_program(&program, block, block_name);
         }        
     }
-    return p;
+    return program;
 }
 
 fn int main(String[] args) {
@@ -1274,34 +1274,34 @@ fn int main(String[] args) {
             io::printn("[ERROR] You need to supply a file.");
             return 1;
         case args.len > 2 && args[2] == "debug":
-            debug = true; // to print debug info in createFromFile
+            debug = true; // to print debug info in create_from_file
     }
 
     // initialize stuff
-    String filePath = args[1];
-    Program p = createFromFile(filePath, debug);
+    String file_path = args[1];
+    Program program = create_from_file(file_path, debug);
     List(<Node>) stack;
     stack.new_init(initial_capacity: 1024);
     Map(<String, Node>) registers;
-    registers.set("x", {.nodeType = NodeType.INT, .value.v_int = 0});
-    registers.set("y", {.nodeType = NodeType.INT, .value.v_int = 0});
+    registers.set("x", {.node_type = NodeType.INT, .value.v_int = 0});
+    registers.set("y", {.node_type = NodeType.INT, .value.v_int = 0});
 
-    if (!p.blocks.has_key("main")) { // make sure theres a main
+    if (!program.blocks.has_key("main")) { // make sure theres a main
         io::printn("[ERROR] No main block.");
         return 1;
     }
 
     switch {
-        case !p.blocks.has_key("main"):
+        case !program.blocks.has_key("main"):
             io::printn("[ERROR] No main block.");
             return 1;
         case debug:
             mem::@report_heap_allocs_in_scope() {
-            exec(&stack, &p, &registers, "main", "none");
+            exec(&stack, &program, &registers, "main", "none");
             io::printn("\n----- Debug -----");
             };
         default:
-            exec(&stack, &p, &registers, "main", "none");
+            exec(&stack, &program, &registers, "main", "none");
     }
     return 0;
 }
