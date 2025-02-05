@@ -2,8 +2,21 @@ module stklng;
 import std::io;
 import std::collections;
 
+fault CompileTimeError {
+    FILE_DOESNT_START_WITH_BLOCK,
+    NO_MAIN_BLOCK,
+    UNEXPECTED_TOKEN,
+    COMPILE_TIME_OTHER_ERROR,
+    EMPTY_FILE,
+    NOT_IMPLEMENTED,
+}
+
 fault RuntimeError {
-    RUNTIMERR
+    TOO_FEW_VALUES_ON_STACK,
+    STACK_TYPE_MISMATCH,
+    INVALID_COMPARISON,
+    REGISTER_TYPE_MISMATCH,
+    RUNTIME_OTHER_ERROR,
 }
 
 enum FunctionType {
@@ -89,16 +102,15 @@ struct Program {
     Map(<String, Block>) blocks;
 }
 
-fn void! _exit(int code) {
-    long b = code;
-    return RuntimeError.RUNTIMERR?;
+fn void! _exit(anyfault code) {
+    return code?;
 }
 
 // print the entire stack
 fn void sPrstk(List(<Node>) *stack, usz line) {
     if (stack.len() < 1) {
         io::printfn("[ERROR] prstk requires at least one value on the stack (Line %d)", line);
-        _exit(1)!!;
+        _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
     }
     io::printn("----     Stack    ----");
     foreach (i, node: stack) {
@@ -141,7 +153,7 @@ fn void sPopMany(List(<Node>) *stack, uint amount) {
 macro sPop(stack, usz line) {
     if (stack.len() < 1) {
         io::printfn("[ERROR] pop requires at least one value on the stack (Line %d)", line);
-        _exit(1)!!;
+        _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
     }
     sPopMany(stack, 1);
 }
@@ -151,17 +163,17 @@ fn void sAddi(List(<Node>) *stack, usz line) {
     switch {
         case stack.len() < 2:
             io::printfn("[ERROR] addi requires at least 2 values on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
         case stack.last()!!.node_type != NodeType.INT:
             io::printfn("[ERROR] addi requires 2 integers on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
     
     int128 addend = stack.last().value.v_int!!;
     sPop(stack, line);
     if (stack.last()!!.node_type != NodeType.INT) {
         io::printfn("[ERROR] addi requires 2 integers on the stack (Line %d)", line);
-        _exit(1)!!;
+        _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
     int128 addend2 = stack.last().value.v_int!!;
     sPop(stack, line);
@@ -174,16 +186,16 @@ fn void sAddf(List(<Node>) *stack, usz line) {
     switch {
         case stack.len() < 2:
             io::printfn("[ERROR] addf requires at least 2 values on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
         case stack.last()!!.node_type != NodeType.FLOAT:
             io::printfn("[ERROR] addf requires 2 floats on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
     float addend = stack.last().value.v_float!!;
     sPop(stack, line);
     if (stack.last()!!.node_type != NodeType.FLOAT) {
         io::printfn("[ERROR] addf requires 2 floats on the stack (Line %d)", line, line);
-        _exit(1)!!;
+        _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
     float addend2 = stack.last().value.v_float!!;
     sPop(stack, line);
@@ -196,17 +208,17 @@ fn void sScat(List(<Node>) *stack, usz line) {
     switch {
         case stack.len() < 2:
             io::printfn("[ERROR] scat requires at least 2 values on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
         case stack.last()!!.node_type != NodeType.STRING:
             io::printfn("[ERROR] scat requires 2 strings on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
 
     String s1 = stack.last().value.v_string!!;
     sPop(stack, line);
     if (stack.last()!!.node_type != NodeType.STRING) {
         io::printfn("[ERROR] scat requires 2 strings on the stack (Line %d)", line);
-        _exit(1)!!;
+        _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
     String s2 = stack.last().value.v_string!!;
     sPop(stack, line);
@@ -220,13 +232,13 @@ fn void sIcmp(List(<Node>) *stack, CmpType cmp, usz line) {
     switch {
         case stack.len() < 2:
             io::printfn("[ERROR] icmp requires at least 2 values on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
         case stack.last()!!.node_type != NodeType.INT:
             io::printfn("[ERROR] icmp requires 2 integers on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
         case stack.get(stack.len() - 2).node_type != NodeType.INT:
             io::printfn("[ERROR] icmp requires 2 integers on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
 
     int128 i1 = stack.last().value.v_int!!;
@@ -249,13 +261,13 @@ fn void sFcmp(List(<Node>) *stack, CmpType cmp, usz line) {
     switch {
         case stack.len() < 2:
             io::printfn("[ERROR] fcmp requires at least 2 values on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
         case stack.last()!!.node_type != NodeType.FLOAT:
             io::printfn("[ERROR] fcmp requires 2 floats on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
         case stack.get(stack.len() - 2).node_type != NodeType.FLOAT:
             io::printfn("[ERROR] fcmp requires 2 floats on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
 
     float f1 = stack.last().value.v_float!!;
@@ -278,13 +290,13 @@ fn void sScmp(List(<Node>) *stack, CmpType cmp, usz line) {
     switch {
         case stack.len() < 2:
             io::printfn("[ERROR] scmp requires at least 2 values on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
         case stack.last()!!.node_type != NodeType.STRING:
             io::printfn("[ERROR] scmp requires 2 Strings on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
         case stack.get(stack.len() - 2).node_type != NodeType.STRING:
             io::printfn("[ERROR] scmp requires 2 Strings on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
 
     String s1 = stack.last().value.v_string!!;
@@ -294,8 +306,8 @@ fn void sScmp(List(<Node>) *stack, CmpType cmp, usz line) {
         case EQ: result = s1 == s2;
         case NE: result = s1 != s2;
         default:
-            io::printn("[ERROR] invalid cmptype for String");
-            _exit(1)!!;
+            io::print("[ERROR] invalid cmptype for String");
+            _exit(RuntimeError.INVALID_COMPARISON)!!;
     }
     sPush(stack, {.node_type = NodeType.BOOL, .value.v_bool = result}, line);
 }
@@ -305,17 +317,17 @@ fn void sIsub(List(<Node>) *stack, usz line) {
     switch {
         case stack.len() < 2:
             io::printfn("[ERROR] isub requires at least 2 values on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
         case stack.last()!!.node_type != NodeType.INT:
             io::printfn("[ERROR] isub requires 2 integers on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
 
     int128 minuend = stack.last().value.v_int!!;
     sPop(stack, line);
     if (stack.last()!!.node_type != NodeType.INT) {
         io::printfn("[ERROR] isub requires 2 integers on the stack (Line %d)", line);
-        _exit(1)!!;
+        _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
     int128 subtrahend = stack.last().value.v_int!!;
     sPop(stack, line);
@@ -328,17 +340,17 @@ fn void sFsub(List(<Node>) *stack, usz line) {
     switch {
         case stack.len() < 2:
             io::printfn("[ERROR] fsub requires at least 2 values on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
         case stack.last()!!.node_type != NodeType.FLOAT:
             io::printfn("[ERROR] fsub requires 2 floats on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
 
     float minuend = stack.last().value.v_float!!;
     sPop(stack, line);
     if (stack.last()!!.node_type != NodeType.FLOAT) {
         io::printfn("[ERROR] fsub requires 2 floats on the stack (Line %d)", line);
-        _exit(1)!!;
+        _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
     float subtrahend = stack.last().value.v_float!!;
     sPop(stack, line);
@@ -350,7 +362,7 @@ fn void sFsub(List(<Node>) *stack, usz line) {
 fn void sSwp(List(<Node>) *stack, usz line) {
     if (stack.len() < 2) {
         io::printfn("[ERROR] swp requires at least 2 values on the stack (Line %d)", line);
-        _exit(1)!!;
+        _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
     }
     stack.swap(stack.len() - 1, stack.len() - 2);
 }
@@ -359,7 +371,7 @@ fn void sSwp(List(<Node>) *stack, usz line) {
 fn void sDup(List(<Node>) *stack, usz line) {
     if (stack.len() < 1) {
         io::printfn("[ERROR] dup requires at least 1 value on the stack (Line %d)", line);
-        _exit(1)!!;
+        _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
     }
     Node node = stack.last()!!;
     sPush(stack, node, line);
@@ -369,7 +381,7 @@ fn void sDup(List(<Node>) *stack, usz line) {
 fn void sPrint(List(<Node>) *stack, usz line) {
     if (stack.len() < 1) {
         io::printfn("[ERROR] print requires at least 1 value on the stack (Line %d)", line);
-        _exit(1)!!;
+        _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
     }
     Node node = stack.last()!!;
     switch (node.node_type) {
@@ -395,7 +407,7 @@ fn void sPrint(List(<Node>) *stack, usz line) {
 fn void sLdx(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     if (stack.len() < 1) {
         io::printfn("[ERROR] ldx requires at least 1 value on the stack (Line %d)", line);
-        _exit(1)!!;
+        _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
     }
     Node node = stack.last()!!;
     sPop(stack, line);
@@ -405,8 +417,8 @@ fn void sLdx(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
 // load stack[-1] into X
 fn void sLdxnp(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     if (stack.len() < 1) {
-        io::printfn("[ERROR] ldx requires at least 1 value on the stack (Line %d)", line);
-        _exit(1)!!;
+        io::printfn("[ERROR] ldxnp requires at least 1 value on the stack (Line %d)", line);
+        _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
     }
     Node node = stack.last()!!;
     registers.set("x", node);
@@ -422,7 +434,7 @@ fn void sStx(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
 fn void sLdy(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     if (stack.len() < 1) {
         io::printfn("[ERROR] ldy requires at least 1 value on the stack (Line %d)", line);
-        _exit(1)!!;
+        _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
     }
     Node node = stack.last()!!;
     sPop(stack, line);
@@ -431,8 +443,8 @@ fn void sLdy(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
 
 fn void sLdynp(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     if (stack.len() < 1) {
-        io::printfn("[ERROR] ldy requires at least 1 value on the stack (Line %d)", line);
-        _exit(1)!!;
+        io::printfn("[ERROR] ldynp requires at least 1 value on the stack (Line %d)", line);
+        _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
     }
     Node node = stack.last()!!;
     registers.set("y", node);
@@ -461,7 +473,7 @@ fn void sRdf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     Node node = registers.get("x")!!;
     if (node.node_type != NodeType.STRING) {
         io::printfn("[ERROR] rdf requires a String in the X register (Line %d)", line);
-        _exit(1)!!;
+        _exit(RuntimeError.REGISTER_TYPE_MISMATCH)!!;
     }
     String! entire_file = (String)file::load_temp(node.value.v_string);
     if (try entire_file) {
@@ -480,13 +492,13 @@ fn void sWtf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     switch {
         case node.node_type != NodeType.STRING:
             io::printfn("[ERROR] wtf requires a String in the X register (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.REGISTER_TYPE_MISMATCH)!!;
         case stack.len() < 1:
             io::printfn("[ERROR] wtf requires at least 1 value on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
         case stack.last()!!.node_type != NodeType.STRING:
             io::printfn("[ERROR] wtf requires a String on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
 
     File! to_write = file::open(node.value.v_string, "w")!!;
@@ -510,13 +522,13 @@ fn void sAtf(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     switch {
         case node.node_type != NodeType.STRING:
             io::printfn("[ERROR] atf requires a String in the X register (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.REGISTER_TYPE_MISMATCH)!!;
         case stack.len() < 1:
             io::printfn("[ERROR] atf requires at least 1 value on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
         case stack.last()!!.node_type != NodeType.STRING:
             io::printfn("[ERROR] atf requires a String on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
 
     File! to_write = file::open(node.value.v_string, "a");
@@ -539,10 +551,10 @@ fn void sChkerr(List(<Node>) *stack, usz line) {
     switch {
         case stack.len() < 1:
             io::printfn("[ERROR] chkerr requires at least 1 value on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
         case stack.last()!!.node_type == NodeType.ERR:
             io::printfn("[ERROR] %s in chkerr (Line %d)", stack.last()!!.value.v_string, line);
-            _exit(1)!!;
+            _exit(RuntimeError.RUNTIME_OTHER_ERROR)!!;
     }
 }
 
@@ -552,13 +564,13 @@ fn void sSsplt(List(<Node>) *stack, Map(<String, Node>) *registers, usz line) {
     switch {
         case node.node_type != NodeType.STRING:
             io::printfn("[ERROR] ssplit requires a String in the X register (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.REGISTER_TYPE_MISMATCH)!!;
         case stack.len() < 1:
             io::printfn("[ERROR] ssplit requires at least 1 value on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
         case stack.last()!!.node_type != NodeType.STRING:
             io::printfn("[ERROR] ssplit requires a String on the stack (Line %d)", line);
-            _exit(1)!!;
+            _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
     }
 
     String needle = node.value.v_string;
@@ -632,11 +644,11 @@ fn String eval(List(<Node>) *stack, Function *function, Map(<String, Node>) *reg
         case F_CALLCON:
             if (stack.len() < 1) {
                 io::printfn("[ERROR] callcon requires at least one value on the stack (Line %d)", function.line);
-                _exit(1)!!;
+                _exit(RuntimeError.TOO_FEW_VALUES_ON_STACK)!!;
             }
             if (stack.last().node_type!! != NodeType.BOOL) {
                 io::printfn("[ERROR] callcon requires at least one boolean on the stack (Line %d)", function.line);
-                _exit(1)!!;
+                _exit(RuntimeError.STACK_TYPE_MISMATCH)!!;
             }
             if (stack.last().value.v_bool!!) {
                 return function.operand.value.v_string;
@@ -691,7 +703,7 @@ fn String eval(List(<Node>) *stack, Function *function, Map(<String, Node>) *reg
             sPreg(registers, function.line);
         default:
             io::printfn("[ERROR] FunctionType %s doesnt exist or is not implemented (Line %d)", function.line);
-            _exit(1)!!;
+            _exit(RuntimeError.RUNTIME_OTHER_ERROR)!!;
     }
     return "!"; // this means stay in the same block
 }
@@ -866,7 +878,7 @@ fn void error_msg(String expected, Token token) {
     io::print(": ");
     io::print(token.value);
     io::printfn(" in line %d", token.line);
-    _exit(1)!!;
+    _exit(CompileTimeError.UNEXPECTED_TOKEN)!!;
 }
 
 // create a Program struct containing blocks
@@ -996,10 +1008,11 @@ fn Program create_from_file(String file_path, bool debug) {
    
     switch {
         case (tokens.len() == 0):
-            _exit(0)!!;
+            io::print("File is empty.");
+            _exit(CompileTimeError.EMPTY_FILE)!!;
         case (tokens[token_index].token_type != SYMBOL):
-            io::printn("[ERROR] File needs to start with a block");
-            _exit(1)!!;
+            io::print("[ERROR] File needs to start with a block");
+            _exit(CompileTimeError.FILE_DOESNT_START_WITH_BLOCK)!!;
     }
 
     while (token_index < tokens.len()) {
@@ -1248,7 +1261,7 @@ fn Program create_from_file(String file_path, bool debug) {
                         });
                     default:
                         io::printfn("%s not implemented or does not exist (Line %d)", tokens[token_index].value, tokens[token_index].line);
-                        _exit(1)!!;
+                        _exit(CompileTimeError.NOT_IMPLEMENTED)!!;
                 }
                 token_index += 1;
                 
@@ -1279,7 +1292,7 @@ fn int main(String[] args) {
 
     switch {
         case args.len < 2:
-            io::printn("[ERROR] You need to supply a file.");
+            io::print("[ERROR] You need to supply a file.");
             return 1;
         case args.len > 2 && args[2] == "debug":
             debug = true; // to print debug info in create_from_file
@@ -1294,15 +1307,10 @@ fn int main(String[] args) {
     registers.set("x", {.node_type = NodeType.INT, .value.v_int = 0});
     registers.set("y", {.node_type = NodeType.INT, .value.v_int = 0});
 
-    if (!program.blocks.has_key("main")) { // make sure theres a main
-        io::printn("[ERROR] No main block.");
-        return 1;
-    }
-
     switch {
         case !program.blocks.has_key("main"):
-            io::printn("[ERROR] No main block.");
-            return 1;
+            io::print("[ERROR] No main block.");
+            _exit(CompileTimeError.NO_MAIN_BLOCK)!!;
         case debug:
             mem::@report_heap_allocs_in_scope() {
             exec(&stack, &program, &registers, "main", "none");
