@@ -111,12 +111,12 @@ fn void sPrstk(List{Node} *stack, usz line) {
     io::printn("----     Stack    ----");
     foreach (i, node: stack) {
         switch (node.node_type) {
-            case NodeType.INT: 
+            case NodeType.INT:
                 io::printfn("%d Int: %d", i, node.value.v_int);
-            case NodeType.STRING: 
+            case NodeType.STRING:
                 io::printfn("%d String: \"%s\"", i, node.value.v_string);
             case NodeType.BOOL:
-                String boolean_value = "false"; 
+                String boolean_value = "false";
                 if (node.value.v_bool) {
                     boolean_value = "true";
                 }
@@ -164,7 +164,7 @@ fn void sAddi(List{Node} *stack, usz line) {
             io::printfn("[ERROR] addi requires 2 integers on the stack (Line %d)", line);
             _exit(STACK_TYPE_MISMATCH)!!;
     }
-    
+
     int128 addend = stack.last().value.v_int!!;
     sPop(stack, line);
     if (stack.last()!!.node_type != NodeType.INT) {
@@ -381,12 +381,12 @@ fn void sPrint(List{Node} *stack, usz line) {
     }
     Node node = stack.last()!!;
     switch (node.node_type) {
-            case NodeType.INT: 
+            case NodeType.INT:
                 io::printn(node.value.v_int);
-            case NodeType.STRING: 
+            case NodeType.STRING:
                 io::printn(node.value.v_string);
             case NodeType.BOOL:
-                String boolean_value = "false"; 
+                String boolean_value = "false";
                 if (node.value.v_bool) boolean_value = "true";
                 io::printn(boolean_value);
             case NodeType.FLOAT:
@@ -575,7 +575,7 @@ fn void sSsplt(List{Node} *stack, HashMap{String, Node} *registers, usz line) {
     String[] splits = to_split.split(mem, needle);
     foreach (split: splits) {
         Node node_to_push = {
-            .node_type = NodeType.STRING, 
+            .node_type = NodeType.STRING,
             .value.v_string = split
         };
         sPush(stack, node_to_push, line);
@@ -587,12 +587,12 @@ fn void sPreg(HashMap{String, Node} *registers, usz line) {
     Node y = registers.get("y")!!;
     io::printn("---- Registers ----");
     switch (x.node_type) {
-        case NodeType.INT: 
+        case NodeType.INT:
             io::printfn("X -> Int: %d", x.value.v_int);
-        case NodeType.STRING: 
+        case NodeType.STRING:
             io::printfn("X -> String: \"%s\"", x.value.v_string);
         case NodeType.BOOL:
-            String boolean_value = "false"; 
+            String boolean_value = "false";
             if (x.value.v_bool) boolean_value = "true";
             io::printfn("X -> Bool: %s", boolean_value);
         case NodeType.FLOAT:
@@ -604,12 +604,12 @@ fn void sPreg(HashMap{String, Node} *registers, usz line) {
             io::printn(x.value);
     }
     switch (y.node_type) {
-        case NodeType.INT: 
+        case NodeType.INT:
             io::printfn("Y -> Int: %d", y.value.v_int);
-        case NodeType.STRING: 
+        case NodeType.STRING:
             io::printfn("Y -> String: \"%s\"", y.value.v_string);
         case NodeType.BOOL:
-            String boolean_value = "false"; 
+            String boolean_value = "false";
             if (y.value.v_bool) boolean_value = "true";
             io::printfn("Y -> Bool: %s", boolean_value);
         case NodeType.FLOAT:
@@ -629,13 +629,13 @@ fn String eval(List{Node} *stack, Function *function, HashMap{String, Node} *reg
     switch (function.function_type) {
         case F_PUSH:
             sPush(stack, function.operand, function.line);
-        case F_POP:     
+        case F_POP:
             sPop(stack, function.line);
         case F_ADDI:
             sAddi(stack, function.line);
         case F_CALL:
             return function.operand.value.v_string;
-        case F_PRSTK: 
+        case F_PRSTK:
             sPrstk(stack, function.line);
         case F_CALLCON:
             if (stack.len() < 1) {
@@ -653,7 +653,7 @@ fn String eval(List{Node} *stack, Function *function, HashMap{String, Node} *reg
             sSwp(stack, function.line);
         case F_DUP:
             sDup(stack, function.line);
-        case F_ISUB: 
+        case F_ISUB:
             sIsub(stack, function.line);
         case F_FSUB:
             sFsub(stack, function.line);
@@ -939,7 +939,7 @@ fn Program create_from_file(String file_path, bool debug) {
                     in_string_literal = false;
                 }
             }
-        } 
+        }
     }
 
     List{Token} tokens;
@@ -947,44 +947,44 @@ fn Program create_from_file(String file_path, bool debug) {
         switch {
             case (is_keyword(tokenstring)):
                 tokens.push({
-                    .token_type = KEYWORD, 
-                    .value = tokenstring, 
+                    .token_type = KEYWORD,
+                    .value = tokenstring,
                     .line = indices.get(i)
                 });
             case (is_integer(tokenstring)):
                 tokens.push({
-                    .token_type = INTEGER, 
-                    .value = tokenstring.strip("_"), 
+                    .token_type = INTEGER,
+                    .value = tokenstring.strip("_"),
                     .line = indices.get(i)
                 });
             case (tokenstring.starts_with("\"")):
                 tokens.push({
-                    .token_type = STRING, 
-                    .value = tokenstring.strip("\"").strip_end("\""), 
+                    .token_type = STRING,
+                    .value = tokenstring.strip("\"").strip_end("\""),
                     .line = indices.get(i)
                 });
             case (is_float(tokenstring)):
                 tokens.push({
-                    .token_type = FLOAT, 
-                    .value = tokenstring, 
+                    .token_type = FLOAT,
+                    .value = tokenstring,
                     .line = indices.get(i)
                 });
             case (is_punct(tokenstring)):
                 tokens.push({
-                    .token_type = PUNCT, 
-                    .value = tokenstring, 
+                    .token_type = PUNCT,
+                    .value = tokenstring,
                     .line = indices.get(i)
                 });
             case (is_boolean(tokenstring)):
                 tokens.push({
-                    .token_type = BOOL, 
-                    .value = tokenstring, 
+                    .token_type = BOOL,
+                    .value = tokenstring,
                     .line = indices.get(i)
                 });
             default:
                 tokens.push({
-                    .token_type = SYMBOL, 
-                    .value = tokenstring, 
+                    .token_type = SYMBOL,
+                    .value = tokenstring,
                     .line = indices.get(i)
                 });
         }
@@ -1001,7 +1001,7 @@ fn Program create_from_file(String file_path, bool debug) {
 
     Program program = {};
     usz token_index = 0;
-   
+
     switch {
         case (tokens.len() == 0):
             io::print("File is empty.");
@@ -1038,11 +1038,11 @@ fn Program create_from_file(String file_path, bool debug) {
                         switch (tokens[token_index].token_type) {
                             case STRING:
                                 add_block_function(&block, {
-                                    .function_type = F_PUSH, 
+                                    .function_type = F_PUSH,
                                     .operand = {
-                                        .node_type = NodeType.STRING, 
+                                        .node_type = NodeType.STRING,
                                         .value.v_string = tokens[token_index].value
-                                    }, 
+                                    },
                                     .line = tokens[token_index].line
                                 });
                             case BOOL:
@@ -1053,28 +1053,28 @@ fn Program create_from_file(String file_path, bool debug) {
                                     val = false;
                                 }
                                 add_block_function(&block, {
-                                    .function_type = F_PUSH, 
+                                    .function_type = F_PUSH,
                                     .operand = {
-                                        .node_type = NodeType.BOOL, 
-                                        .value.v_bool = val}, 
+                                        .node_type = NodeType.BOOL,
+                                        .value.v_bool = val},
                                     .line = tokens[token_index].line
                                 });
                             case INTEGER:
                                 add_block_function(&block, {
-                                    .function_type = F_PUSH, 
+                                    .function_type = F_PUSH,
                                     .operand = {
-                                        .node_type = NodeType.INT, 
+                                        .node_type = NodeType.INT,
                                         .value.v_int = tokens[token_index].value.to_int()!!
-                                    }, 
+                                    },
                                     .line = tokens[token_index].line
                                 });
                             case FLOAT:
                                 add_block_function(&block, {
-                                    .function_type = F_PUSH, 
+                                    .function_type = F_PUSH,
                                     .operand = {
-                                        .node_type = NodeType.FLOAT, 
+                                        .node_type = NodeType.FLOAT,
                                         .value.v_float = tokens[token_index].value.to_float()!!
-                                    }, 
+                                    },
                                     .line = tokens[token_index].line
                                 });
                             default:
@@ -1082,17 +1082,17 @@ fn Program create_from_file(String file_path, bool debug) {
                         }
                     case ("print"):
                         add_block_function(&block, {
-                            .function_type = F_PRINT, 
+                            .function_type = F_PRINT,
                             .line = tokens[token_index].line
                         });
                     case ("swp"):
                         add_block_function(&block, {
-                            .function_type = F_SWP, 
+                            .function_type = F_SWP,
                             .line = tokens[token_index].line
                         });
                     case ("dup"):
                         add_block_function(&block, {
-                            .function_type = F_DUP, 
+                            .function_type = F_DUP,
                             .line = tokens[token_index].line
                         });
                     case ("icmp"):
@@ -1103,38 +1103,38 @@ fn Program create_from_file(String file_path, bool debug) {
                         switch (tokens[token_index].value) {
                             case ("eq"):
                                 add_block_function(&block, {
-                                    .function_type = F_ICMP, 
-                                    .cmp_type = EQ, 
+                                    .function_type = F_ICMP,
+                                    .cmp_type = EQ,
                                     .line = tokens[token_index].line
                                 });
                             case ("ne"):
                                 add_block_function(&block, {
-                                    .function_type = F_ICMP, 
-                                    .cmp_type = NE, 
+                                    .function_type = F_ICMP,
+                                    .cmp_type = NE,
                                     .line = tokens[token_index].line
                                 });
                             case ("lt"):
                                 add_block_function(&block, {
-                                    .function_type = F_ICMP, 
-                                    .cmp_type = LT, 
+                                    .function_type = F_ICMP,
+                                    .cmp_type = LT,
                                     .line = tokens[token_index].line
                                 });
                             case ("le"):
                                 add_block_function(&block, {
-                                    .function_type = F_ICMP, 
-                                    .cmp_type = LE, 
+                                    .function_type = F_ICMP,
+                                    .cmp_type = LE,
                                     .line = tokens[token_index].line
                                 });
                             case ("gt"):
                                 add_block_function(&block, {
-                                    .function_type = F_ICMP, 
-                                    .cmp_type = GT, 
+                                    .function_type = F_ICMP,
+                                    .cmp_type = GT,
                                     .line = tokens[token_index].line
                                 });
                             case ("ge"):
                                 add_block_function(&block, {
-                                    .function_type = F_ICMP, 
-                                    .cmp_type = GE, 
+                                    .function_type = F_ICMP,
+                                    .cmp_type = GE,
                                     .line = tokens[token_index].line
                                 });
                             default:
@@ -1146,11 +1146,11 @@ fn Program create_from_file(String file_path, bool debug) {
                             error_msg("block name", tokens[token_index]);
                         }
                         add_block_function(&block, {
-                            .function_type = F_CALLCON, 
+                            .function_type = F_CALLCON,
                             .operand = {
-                                .node_type = NodeType.STRING, 
+                                .node_type = NodeType.STRING,
                                 .value.v_string = tokens[token_index].value
-                            }, 
+                            },
                             .line = tokens[token_index].line
                         });
                     case ("call"):
@@ -1159,100 +1159,100 @@ fn Program create_from_file(String file_path, bool debug) {
                             error_msg("block name", tokens[token_index]);
                         }
                         add_block_function(&block, {
-                            .function_type = F_CALL, 
+                            .function_type = F_CALL,
                             .operand = {
-                                .node_type = NodeType.STRING, 
+                                .node_type = NodeType.STRING,
                                 .value.v_string = tokens[token_index].value
                             }, .line = tokens[token_index].line
                         });
                     case ("prstk"):
                         add_block_function(&block, {
-                            .function_type = F_PRSTK, 
+                            .function_type = F_PRSTK,
                             .line = tokens[token_index].line
                         });
                     case ("pop"):
                         add_block_function(&block, {
-                            .function_type = F_POP, 
+                            .function_type = F_POP,
                             .line = tokens[token_index].line
                         });
                     case ("isub"):
                         add_block_function(&block, {
-                            .function_type = F_ISUB, 
+                            .function_type = F_ISUB,
                             .line = tokens[token_index].line
                         });
                     case ("addi"):
                         add_block_function(&block, {
-                            .function_type = F_ADDI, 
+                            .function_type = F_ADDI,
                             .line = tokens[token_index].line
                         });
                     case ("ldx"):
                         add_block_function(&block, {
-                            .function_type = F_LDX, 
+                            .function_type = F_LDX,
                             .line = tokens[token_index].line
                         });
                     case ("ldxnp"):
                         add_block_function(&block, {
-                            .function_type = F_LDXNP, 
+                            .function_type = F_LDXNP,
                             .line = tokens[token_index].line
                         });
                     case ("ldynp"):
                         add_block_function(&block, {
-                            .function_type = F_LDYNP, 
+                            .function_type = F_LDYNP,
                             .line = tokens[token_index].line
                         });
                     case ("ldy"):
                         add_block_function(&block, {
-                            .function_type = F_LDY, 
+                            .function_type = F_LDY,
                             .line = tokens[token_index].line
                         });
                     case ("stx"):
                         add_block_function(&block, {
-                            .function_type = F_STX, 
+                            .function_type = F_STX,
                             .line = tokens[token_index].line
                         });
                     case ("sty"):
                         add_block_function(&block, {
-                            .function_type = F_STY, 
+                            .function_type = F_STY,
                             .line = tokens[token_index].line
                         });
                     case ("txy"):
                         add_block_function(&block, {
-                            .function_type = F_TXY, 
+                            .function_type = F_TXY,
                             .line = tokens[token_index].line
                         });
                     case ("tyx"):
                         add_block_function(&block, {
-                            .function_type = F_TYX, 
+                            .function_type = F_TYX,
                             .line = tokens[token_index].line
                         });
                     case ("rdf"):
                         add_block_function(&block, {
-                            .function_type = F_RDF, 
+                            .function_type = F_RDF,
                             .line = tokens[token_index].line
                         });
                     case ("wtf"):
                         add_block_function(&block, {
-                            .function_type = F_WTF, 
+                            .function_type = F_WTF,
                             .line = tokens[token_index].line
                         });
                     case ("atf"):
                         add_block_function(&block, {
-                            .function_type = F_ATF, 
+                            .function_type = F_ATF,
                             .line = tokens[token_index].line
                         });
                     case ("chkerr"):
                         add_block_function(&block, {
-                            .function_type = F_CHKERR, 
+                            .function_type = F_CHKERR,
                             .line = tokens[token_index].line
                         });
                     case ("ssplt"):
                         add_block_function(&block, {
-                            .function_type = F_SSPLT, 
+                            .function_type = F_SSPLT,
                             .line = tokens[token_index].line
                         });
                     case ("preg"):
                         add_block_function(&block, {
-                            .function_type = F_PREG, 
+                            .function_type = F_PREG,
                             .line = tokens[token_index].line
                         });
                     default:
@@ -1260,7 +1260,7 @@ fn Program create_from_file(String file_path, bool debug) {
                         _exit(NOT_IMPLEMENTED)!!;
                 }
                 token_index += 1;
-                
+
                 switch {
                     case tokens[token_index].token_type != PUNCT:
                         error_msg(";", tokens[token_index]);
@@ -1278,7 +1278,7 @@ fn Program create_from_file(String file_path, bool debug) {
                 io::printn("-------- Functions --------\n");
             }
             add_block_to_program(&program, block, block_name);
-        }        
+        }
     }
     return program;
 }
