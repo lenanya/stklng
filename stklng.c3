@@ -1020,7 +1020,7 @@ fn Program create_from_file(String file_path, bool debug) {
             token_index += 1;
 
             switch {
-                case (tokens[token_index].token_type != PUNCT): // expect {
+                case (tokens[token_index].token_type != PUNCT):
                     error_msg(":", tokens[token_index]);
                 case (tokens[token_index].value != ":"):
                     error_msg(":", tokens[token_index]);
