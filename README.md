@@ -7,6 +7,8 @@ stklng is a stack based, minimalistic interpreted programming language
 ### build from source
 
 You need the c3 compiler https://github.com/c3lang/c3c
+
+Currently only v0.7.5 will work cause i havent updated it yet
    
 then you can simply run
 
